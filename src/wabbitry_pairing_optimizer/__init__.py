@@ -1,25 +1,47 @@
-"""Wabbitry pairing optimizer: least-bad breeding pairings."""
+"""Wabbitry pairing optimizer: least-bad breeding pairings.
 
-from wabbitry_pairing_optimizer.models import Breeder, Pairing, PairingReport
-from wabbitry_pairing_optimizer.pairing import (
-    EXCLUDED_STRAIN,
-    PENALTY_LINE_BRED,
-    PENALTY_OUTCROSS,
-    PENALTY_SIBLING,
-    YAZ_MIN_LITTERS,
-    load_breeders,
-    optimize_pairings,
+Public API: the data models, the typed config, and (once implemented in later
+phases) the solver, kinship, productivity, and report functions.
+"""
+
+from wabbitry_pairing_optimizer.config import (
+    Config,
+    ConfigError,
+    FullSolutionConfig,
+    KinshipConfig,
+    OptimizationConfig,
+    OutputConfig,
+    PairabilityConfig,
+    PerPairingConfig,
+    ProductivityConfig,
+    ScoringConfig,
+    TierPenaltyConfig,
+    load_config,
+)
+from wabbitry_pairing_optimizer.models import (
+    Breeder,
+    Pairing,
+    PairingReport,
+    Solution,
+    SolutionScore,
 )
 
 __all__ = [
     "Breeder",
+    "Config",
+    "ConfigError",
+    "FullSolutionConfig",
+    "KinshipConfig",
+    "OptimizationConfig",
+    "OutputConfig",
+    "PairabilityConfig",
     "Pairing",
     "PairingReport",
-    "load_breeders",
-    "optimize_pairings",
-    "EXCLUDED_STRAIN",
-    "PENALTY_LINE_BRED",
-    "PENALTY_OUTCROSS",
-    "PENALTY_SIBLING",
-    "YAZ_MIN_LITTERS",
+    "PerPairingConfig",
+    "ProductivityConfig",
+    "ScoringConfig",
+    "Solution",
+    "SolutionScore",
+    "TierPenaltyConfig",
+    "load_config",
 ]

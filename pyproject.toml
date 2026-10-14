@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wabbitry-pairing-optimizer"
-dynamic = ["version"]
+version = "0.1.0"
 description = "Least-bad breeding pairings for Wascally Wabbitry."
 requires-python = ">=3.11"
 dependencies = [
@@ -18,14 +18,17 @@ dev = [
     "pytest>=8.0",
 ]
 
-[tool.hatch.version]
-source = "vcs"
+[tool.hatch.build.targets.wheel]
+packages = ["src/wabbitry_pairing_optimizer"]
 
 [tool.ruff]
 line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "D", "ANN", "B", "UP", "S"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "S101", "ANN"]

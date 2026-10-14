@@ -1,7 +1,111 @@
 """Command-line interface for the pairing optimizer.
 
-Scaffolding only. Implementation deferred until design + impl plan are
-approved. See ``docs/design.md``.
+Phase 0 establishes the CLI **emission convention** (design §8), not the full
+CLI. Per the two-layer model:
+
+- **Layer 1 — ``--output json|text``** governs ALL terminal emissions: help,
+  version, errors, status. ``json`` emits every message as a structure an agent
+  can consume; ``text`` is human-readable. ``--output`` is **NOT a config
+  parameter** (it only governs the stdout interface).
+- **Layer 2 — the result content** is always written dual-format to
+  ``--output-dir`` (json + markdown). That rendering lands with the solver in
+  Phase 4/5 (``solve.py`` / ``render.py``).
+
+This module currently wires the emission convention and the argument contract.
+Full solver wiring and output-dir rendering are implemented in later phases.
 """
 
 from __future__ import annotations
+
+import argparse
+import json
+import sys
+from typing import TextIO
+
+__all__ = ["main"]
+
+
+def _version() -> str:
+    """Return the package version (static in pyproject; no VCS plugin needed)."""
+    return "0.1.0"
+
+
+def _emit_json(obj: object) -> str:
+    return json.dumps(obj, indent=2)
+
+
+def _emit(emission: str, obj: object, stream: TextIO = sys.stdout) -> None:
+    if emission == "json":
+        stream.write(_emit_json(obj) + "\n")
+    else:
+        # obj is a plain string/bytes-like message for text mode.
+        stream.write(f"{obj}\n")
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point. Returns a process exit code.
+
+    ``--output`` is read from argv up front so help/error/version emission can
+    honor it. Solver + rendering are wired in later phases.
+    """
+    parser = argparse.ArgumentParser(
+        prog="wabbitry-pairing-optimizer",
+        description="Least-bad breeding pairings for Wascally Wabbitry.",
+        add_help=False,
+    )
+    parser.add_argument(
+        "breeders",
+        nargs="?",
+        default="data/breeders.json",
+        help="path to breeders.json (default data/breeders.json)",
+    )
+    parser.add_argument(
+        "--pairs", metavar="FILE", help="pre-decided pairings JSON (list of Pairing)"
+    )
+    parser.add_argument("--config", metavar="FILE", default="data/config.toml")
+    parser.add_argument(
+        "--output",
+        choices=("json", "text"),
+        default="json",
+        help="program emission format: json (agent) or text (human); default json",
+    )
+    parser.add_argument("--output-dir", metavar="DIR", help="result artifact output directory")
+    parser.add_argument("-h", "--help", action="store_true", help="show help and exit")
+    parser.add_argument("--version", action="store_true", help="show version and exit")
+
+    pre, _ = parser.parse_known_args(argv)
+    emission: str = getattr(pre, "output", "json")
+
+    if getattr(pre, "help", False):
+        _emit(emission, parser.format_help())
+        return 0
+    if getattr(pre, "version", False):
+        _emit(
+            emission,
+            {
+                "command": "version",
+                "package": "wabbitry-pairing-optimizer",
+                "version": _version(),
+            }
+            if emission == "json"
+            else f"wabbitry-pairing-optimizer {_version()}",
+        )
+        return 0
+
+    # Solver + rendering + config load are wired in Phase 4/5. The convention is
+    # established; the argument contract is parsed. A bare run reports staged.
+    _emit(
+        emission,
+        {
+            "command": "status",
+            "note": "CLI convention established (Phase 0); solver wired in Phase 4.",
+            "breeders": getattr(pre, "breeders", "data/breeders.json"),
+        }
+        if emission == "json"
+        else "wabbitry-pairing-optimizer: staged (Phase 0); solver lands in Phase 4.",
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
