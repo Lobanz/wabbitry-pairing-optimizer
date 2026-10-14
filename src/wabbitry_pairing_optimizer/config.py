@@ -130,7 +130,9 @@ class OptimizationConfig(BaseModel):
     Attributes:
         min_runs: Minimum runs before any stall-based stop can fire.
         stall_limit: Runs without a new winner after min_runs before stopping.
-        seed: Fixed PRNG seed for reproducibility (0 = unset/random).
+        seed: Fixed PRNG seed for reproducibility (0 = unset/random). Consistent
+            nonzero seed (e.g. 42) when tuning weights so round changes reflect
+            only the weight change, not shuffling noise.
         buck_batch_capacity: Max bucks the operator can watch concurrently.
     """
 
