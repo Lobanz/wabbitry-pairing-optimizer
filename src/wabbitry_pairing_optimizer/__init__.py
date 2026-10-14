@@ -47,6 +47,10 @@ from wabbitry_pairing_optimizer.recipe import (
     RecipeError,
     verify_recipes,
 )
+from wabbitry_pairing_optimizer.scoring import (
+    full_solution_score,
+    per_pairing_score,
+)
 
 __all__ = [
     "Breeder",
@@ -72,9 +76,11 @@ __all__ = [
     "coancestry_matrix_r",
     "doe_production_scores",
     "full_sibling_sets",
+    "full_solution_score",
     "load_breeders",
     "load_config",
     "load_litters",
+    "per_pairing_score",
     "productivity_index",
     "tier_for_r",
     "verify_recipes",
