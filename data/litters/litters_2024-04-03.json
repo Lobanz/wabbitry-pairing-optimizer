@@ -1,0 +1,58 @@
+[
+  {
+    "dam": "isabelle",
+    "sire": "xander",
+    "born": "2024-04-03",
+    "males": 5,
+    "females": 4
+  },
+  {
+    "dam": "harmony",
+    "sire": "xander",
+    "born": "2024-04-03",
+    "males": 3,
+    "females": 4
+  },
+  {
+    "dam": "ginseng",
+    "sire": "xander",
+    "born": "2024-04-03",
+    "males": 4,
+    "females": 4
+  },
+  {
+    "dam": "ester",
+    "sire": "willy",
+    "born": "2024-04-03",
+    "males": 3,
+    "females": 3
+  },
+  {
+    "dam": "daisy",
+    "sire": "yaz",
+    "born": "2024-04-03",
+    "males": 2,
+    "females": 1
+  },
+  {
+    "dam": "charlotte",
+    "sire": "yaz",
+    "born": "2024-04-03",
+    "males": 0,
+    "females": 3
+  },
+  {
+    "dam": "betsy",
+    "sire": "zeek",
+    "born": "2024-04-03",
+    "males": 5,
+    "females": 5
+  },
+  {
+    "dam": "abigail",
+    "sire": "zeek",
+    "born": "2024-04-03",
+    "males": 1,
+    "females": 5
+  }
+]

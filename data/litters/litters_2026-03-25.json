@@ -1,0 +1,86 @@
+[
+  {
+    "dam": "amber",
+    "sire": "zeek",
+    "born": "2026-03-25",
+    "males": 1,
+    "females": 2
+  },
+  {
+    "dam": "betty",
+    "sire": "yaz",
+    "born": "2026-03-25",
+    "males": 4,
+    "females": 4
+  },
+  {
+    "dam": "ester",
+    "sire": "vader",
+    "born": "2026-03-25",
+    "males": 0,
+    "females": 3
+  },
+  {
+    "dam": "fiona",
+    "sire": "willy",
+    "born": "2026-03-25",
+    "males": 8,
+    "females": 2
+  },
+  {
+    "dam": "ginseng",
+    "sire": "vader",
+    "born": "2026-03-25",
+    "males": 3,
+    "females": 1
+  },
+  {
+    "dam": "harmony",
+    "sire": "xander",
+    "born": "2026-03-25",
+    "males": 1,
+    "females": 3
+  },
+  {
+    "dam": "isabelle",
+    "sire": "xander",
+    "born": "2026-03-25",
+    "males": 1,
+    "females": 1
+  },
+  {
+    "dam": "kiki",
+    "sire": "yaz",
+    "born": "2026-03-25",
+    "males": 1,
+    "females": 0
+  },
+  {
+    "dam": "lily",
+    "sire": "zeek",
+    "born": "2026-03-25",
+    "males": 4,
+    "females": 4
+  },
+  {
+    "dam": "iris",
+    "sire": "vader",
+    "born": "2026-03-25",
+    "males": 4,
+    "females": 3
+  },
+  {
+    "dam": "jade",
+    "sire": "vader",
+    "born": "2026-03-25",
+    "males": 2,
+    "females": 5
+  },
+  {
+    "dam": "opal",
+    "sire": "yaz",
+    "born": "2026-03-25",
+    "males": 4,
+    "females": 2
+  }
+]

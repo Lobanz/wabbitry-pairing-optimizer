@@ -1,0 +1,73 @@
+# Wabbitry Pairing Optimizer — operator-policy configuration.
+# All values here are stated policy (opinion, not fact) — tweak here, one place.
+# Defaults reflect the decisions made 2026-10-15 (see docs/design.md, decisions/).
+
+[kinship]
+# Founder-sister shared blood factor (S) — ADR 0003.
+# Fraction of blood two sister-founders (founder_sisters) count as sharing.
+sister_factor = 0.5
+# r below this threshold classifies a pairing as Outcross tier (config, not magic).
+outcross_r_max = 0.1
+
+[productivity]
+# Doe productivity index = size_weight*avg_litter_size + consistency_weight*consistency
+# (outliers trimmed before averaging).
+size_weight = 0.6
+consistency_weight = 0.4
+# own-vs-mother blend: w_own = own_count / (own_count + evidence_K)
+# More own litters -> trust own more; thin/absent -> lean on mother.
+evidence_K = 2.0
+# Drop freak big/small litters before averaging.
+outlier_trim = true
+# How outliers are detected/trimmed (param, not magic): e.g. "iqr" (value beyond
+# 1.5*IQR) or "zscore" (beyond 2 sigma / MAD) or "none".
+outlier_method = "iqr"
+outlier_threshold = 1.5
+
+[scoring.per_pairing]
+# Per-pairing score = weight_r*r + weight_doe_history*doe_history
+# (picks the best buck for a single doe).
+weight_r = 1.0
+weight_doe_history = 1.0
+
+[scoring.tier_penalty]
+# Kinship tier penalties (per pairing) - config, not magic.
+penalty_outcross = 0
+penalty_line_bred = 1
+penalty_sibling = 5
+
+[scoring.full_solution]
+# Ranks complete assignments across the multi-start runs.
+weight_sum_r = 1.0
+weight_sum_history = 1.0
+# Strong penalty per unbred doe (order-trap artifact).
+weight_unbred = -5.0
+# Penalty per forced sibling / parent-offspring pairing (last resort).
+weight_sibling = -3.0
+# Minimize round calendar span (buck load spread) - operator labor cost.
+weight_schedule_length = -0.3
+# Maximize pairability (mixed-pair proxy for mixed-trio count).
+weight_pairability = 1.0
+
+[pairability]
+# Swappable metric mode (see §4). Current: "availability" = mixed-pair count.
+mode = "availability"
+
+[optimization]
+# Minimum runs before stall-termination can fire (guarantees exploration).
+min_runs = 500
+# Stop after this many consecutive runs with no new winner.
+stall_limit = 100
+# Optional fixed seed for reproducible runs (0 = not set / random).
+seed = 0
+# Concurrent bucks the operator can manage at once (batching for calendar).
+buck_batch_capacity = 4
+
+[output]
+# Default output directory for result artifacts (--output-dir overrides).
+output_dir = "out"
+# Result artifact filenames (config, not magic).
+report_json = "wabbitry-report.json"
+report_md = "wabbitry-report.md"
+kinship_table_csv = "kinship-table.csv"
+doe_productivity_csv = "doe-productivity.csv"

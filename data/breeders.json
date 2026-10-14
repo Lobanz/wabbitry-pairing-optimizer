@@ -1,0 +1,365 @@
+[
+  {
+    "name": "abby",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "abigail",
+    "recipe": {
+      "zeek": 0.5,
+      "abigail": 0.5
+    }
+  },
+  {
+    "name": "amber",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "abigail",
+    "recipe": {
+      "zeek": 0.5,
+      "abigail": 0.5
+    }
+  },
+  {
+    "name": "betty",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "betsy",
+    "founder": false,
+    "recipe": {
+      "zeek": 0.5,
+      "betsy": 0.5
+    }
+  },
+  {
+    "name": "fiona",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "ester",
+    "dam": "willy",
+    "founder": false,
+    "recipe": {
+      "ester": 0.5,
+      "willy": 0.5
+    }
+  },
+  {
+    "name": "ginseng",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": null,
+    "dam": null,
+    "founder_sisters": [
+      "harmony"
+    ],
+    "recipe": {
+      "ginseng": 1.0
+    }
+  },
+  {
+    "name": "harmony",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": null,
+    "dam": null,
+    "founder_sisters": [
+      "ginseng"
+    ],
+    "recipe": {
+      "harmony": 1.0
+    }
+  },
+  {
+    "name": "iris",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "xander",
+    "dam": "harmony",
+    "founder": false,
+    "recipe": {
+      "xander": 0.5,
+      "harmony": 0.5
+    }
+  },
+  {
+    "name": "isabelle",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "recipe": {
+      "isabelle": 1.0
+    }
+  },
+  {
+    "name": "jade",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "xander",
+    "dam": "harmony",
+    "founder": false,
+    "recipe": {
+      "xander": 0.5,
+      "harmony": 0.5
+    }
+  },
+  {
+    "name": "kiki",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "betsy",
+    "founder": false,
+    "recipe": {
+      "zeek": 0.5,
+      "betsy": 0.5
+    }
+  },
+  {
+    "name": "lily",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "betsy",
+    "founder": false,
+    "recipe": {
+      "zeek": 0.5,
+      "betsy": 0.5
+    }
+  },
+  {
+    "name": "maxine",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "betsy",
+    "founder": false,
+    "recipe": {
+      "zeek": 0.5,
+      "betsy": 0.5
+    }
+  },
+  {
+    "name": "opal",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": false,
+    "sire": "uno",
+    "dam": "lily",
+    "parentage_uncertain": true,
+    "recipe": {
+      "zeek": 0.5,
+      "abigail": 0.25,
+      "betsy": 0.25
+    }
+  },
+  {
+    "name": "uno",
+    "breed": "M70 NZW",
+    "gender": "M",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "abigail",
+    "founder": false,
+    "recipe": {
+      "zeek": 0.5,
+      "abigail": 0.5
+    }
+  },
+  {
+    "name": "vader",
+    "breed": "TAMUK NZW",
+    "gender": "M",
+    "culled": false,
+    "sire": "willy",
+    "dam": "isabelle",
+    "founder": false,
+    "recipe": {
+      "willy": 0.5,
+      "isabelle": 0.5
+    }
+  },
+  {
+    "name": "vincent",
+    "breed": "TAMUK Composite",
+    "gender": "M",
+    "culled": false,
+    "sire": null,
+    "dam": null,
+    "recipe": {
+      "vincent": 1.0
+    }
+  },
+  {
+    "name": "willy",
+    "breed": "TAMUK NZW",
+    "gender": "M",
+    "culled": false,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "recipe": {
+      "willy": 1.0
+    }
+  },
+  {
+    "name": "xerces",
+    "breed": "TAMUK NZW",
+    "gender": "M",
+    "culled": false,
+    "sire": "xander",
+    "dam": "isabelle",
+    "recipe": {
+      "xander": 0.5,
+      "isabelle": 0.5
+    }
+  },
+  {
+    "name": "yaz",
+    "breed": "M70 NZW",
+    "gender": "M",
+    "culled": false,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "breeding_priority": "sire",
+    "recipe": {
+      "yaz": 1.0
+    }
+  },
+  {
+    "name": "zack",
+    "breed": "M70 NZW",
+    "gender": "M",
+    "culled": false,
+    "sire": "zeek",
+    "dam": "betsy",
+    "recipe": {
+      "zeek": 0.5,
+      "betsy": 0.5
+    }
+  },
+  {
+    "name": "abigail",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "founder_sisters": [
+      "betsy"
+    ],
+    "recipe": {
+      "abigail": 1.0
+    }
+  },
+  {
+    "name": "betsy",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "founder_sisters": [
+      "abigail"
+    ],
+    "recipe": {
+      "betsy": 1.0
+    }
+  },
+  {
+    "name": "charlotte",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "founder_sisters": [
+      "daisy"
+    ],
+    "recipe": {
+      "charlotte": 1.0
+    }
+  },
+  {
+    "name": "daisy",
+    "breed": "M70 NZW",
+    "gender": "F",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "founder_sisters": [
+      "charlotte"
+    ],
+    "recipe": {
+      "daisy": 1.0
+    }
+  },
+  {
+    "name": "ester",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "recipe": {
+      "ester": 1.0
+    }
+  },
+  {
+    "name": "florence",
+    "breed": "TAMUK NZW",
+    "gender": "F",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "recipe": {
+      "florence": 1.0
+    }
+  },
+  {
+    "name": "xander",
+    "breed": "TAMUK NZW",
+    "gender": "M",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "recipe": {
+      "xander": 1.0
+    }
+  },
+  {
+    "name": "zeek",
+    "breed": "M70 NZW",
+    "gender": "M",
+    "culled": true,
+    "sire": null,
+    "dam": null,
+    "founder": true,
+    "recipe": {
+      "zeek": 1.0
+    }
+  }
+]

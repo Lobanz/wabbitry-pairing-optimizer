@@ -1,0 +1,23 @@
+[
+  {
+    "dam": "ester",
+    "sire": "willy",
+    "born": "2024-10-08",
+    "males": 4,
+    "females": 2
+  },
+  {
+    "dam": "betsy",
+    "sire": "zeek",
+    "born": "2024-10-08",
+    "males": 1,
+    "females": 5
+  },
+  {
+    "dam": "abigail",
+    "sire": "zeek",
+    "born": "2024-10-08",
+    "males": 4,
+    "females": 2
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "dam": "betsy",
+    "sire": "zeek",
+    "born": "2025-04-15",
+    "males": 2,
+    "females": 0
+  },
+  {
+    "dam": "betty",
+    "sire": "zeek",
+    "born": "2025-04-15",
+    "males": 1,
+    "females": 1
+  },
+  {
+    "dam": "ester",
+    "sire": "willy",
+    "born": "2025-04-15",
+    "males": 1,
+    "females": 1
+  },
+  {
+    "dam": "harmony",
+    "sire": "xander",
+    "born": "2025-04-15",
+    "males": 0,
+    "females": 1
+  },
+  {
+    "dam": "isabelle",
+    "sire": "xander",
+    "born": "2025-04-15",
+    "males": 1,
+    "females": 0
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "dam": "isabelle",
+    "sire": "willy",
+    "born": "2024-12-01",
+    "males": 4,
+    "females": 2
+  },
+  {
+    "dam": "florence",
+    "sire": "willy",
+    "born": "2024-12-01",
+    "males": 2,
+    "females": 0
+  },
+  {
+    "dam": "daisy",
+    "sire": "yaz",
+    "born": "2024-12-01",
+    "males": 2,
+    "females": 1
+  }
+]
