@@ -118,3 +118,23 @@ def test_breeder_model_frozen() -> None:
     b = Breeder(name="yaz", breed="M70 NZW", gender="M")
     with pytest.raises(ValueError):
         b.name = "zeek"  # type: ignore[misc]
+
+
+def test_gender_consistency_of_parents() -> None:
+    """Every sire is a buck and every dam is a doe in the real roster.
+
+    Regression test: fiona's pedigree had dam/sire swapped (sire=ester [F],
+    dam=willy [M]); fixed to sire=willy, dam=ester. load_breeders now validates.
+    """
+    from wabbitry_pairing_optimizer.load_breeders import load_breeders
+
+    roster = load_breeders(DATA / "breeders.json")
+    by = {b.name: b for b in roster}
+    for b in roster:
+        if b.sire is not None:
+            assert by[b.sire].gender == "M", f"{b.name} sire {b.sire} is not a buck"
+        if b.dam is not None:
+            assert by[b.dam].gender == "F", f"{b.name} dam {b.dam} is not a doe"
+    # The specific former inversion is now correct.
+    assert by["fiona"].sire == "willy"
+    assert by["fiona"].dam == "ester"

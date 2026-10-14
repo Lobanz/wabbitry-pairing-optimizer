@@ -41,8 +41,8 @@
     "breed": "TAMUK NZW",
     "gender": "F",
     "culled": false,
-    "sire": "ester",
-    "dam": "willy",
+    "sire": "willy",
+    "dam": "ester",
     "founder": false,
     "recipe": {
       "ester": 0.5,

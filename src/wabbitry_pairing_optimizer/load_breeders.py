@@ -65,12 +65,26 @@ def load_breeders(path: str | Path = "data/breeders.json") -> list[Breeder]:
 
 
 def _validate_parents(breeders: list[Breeder], p: Path) -> None:
-    """Every sire/dam must resolve to a known rabbit (culled parents are valid)."""
-    known = {b.name for b in breeders}
+    """Validate parentage references and gender consistency.
+
+    Every sire/dam must resolve to a known rabbit (culled parents are valid);
+    a sire must be a buck (M) and a dam must be a doe (F). Catching a swapped
+    dam/sire (e.g. a buck recorded as a dam) here avoids wrong productivity
+    blends and confusing kinship topology downstream.
+    """
+    known = {b.name: b for b in breeders}
     for b in breeders:
         for parent in (b.sire, b.dam):
             if parent is not None and parent not in known:
                 raise BreedersError(f"{p}: {b.name!r} references unknown parent {parent!r}")
+        if b.sire is not None and known[b.sire].gender != "M":
+            raise BreedersError(
+                f"{p}: {b.name!r} has a doe ({b.sire!r}) recorded as its sire; sire must be a buck"
+            )
+        if b.dam is not None and known[b.dam].gender != "F":
+            raise BreedersError(
+                f"{p}: {b.name!r} has a buck ({b.dam!r}) recorded as its dam; dam must be a doe"
+            )
 
 
 def _validate_recipes(breeders: list[Breeder], p: Path) -> None:
