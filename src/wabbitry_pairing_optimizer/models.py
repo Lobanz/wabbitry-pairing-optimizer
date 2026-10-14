@@ -22,9 +22,11 @@ class Breeder(BaseModel):
 
     Attributes:
         name: Unique lowercase identifier.
-        breed: Combined strain + breed label, e.g. ``"M70 NZW"``. The strain
-            (first token, ``M70`` / ``TAMUK`` / ``Composite``) gates pairing
-            legality; ``Composite`` is excluded from breeding.
+        breed: Combined origin + breed, e.g. ``"M70 NZW"`` or ``"TAMUK NZW"``.
+            For breeding, strain = the first token (``M70`` / ``TAMUK``).
+            ``"TAMUK Composite"`` is a SEPARATE, excluded breed (kept as the
+            "diversity hire", not part of the breeding program) — see
+            ``is_composite``.
         gender: ``"M"`` (buck) or ``"F"`` (doe).
         culled: Removed from the active pool (e.g. freezer) but kept as a valid
             parent reference; excluded as a breeding candidate.
@@ -55,8 +57,24 @@ class Breeder(BaseModel):
 
     @property
     def strain(self) -> str:
-        """The strain portion of the breed, e.g. ``"M70"``."""
+        """The strain portion of the breed, e.g. ``"M70"`` or ``"TAMUK"``.
+
+        Strain is the first token of the breed label (used for pool grouping).
+        It is distinct from Composite status: a ``"TAMUK Composite"`` rabbit has
+        strain ``"TAMUK"`` but is excluded from breeding (see ``is_composite``).
+        """
         return self.breed.split()[0]
+
+    @property
+    def is_composite(self) -> bool:
+        """True if the breed label carries a ``Composite`` token.
+
+        A Composite is not part of the pure breeding program (design §2/§3):
+        it is kept for diversity but is excluded as a breeding candidate. The
+        ``Composite`` token may appear anywhere in the label (e.g.
+        ``"TAMUK Composite"``), so this is a token check, not the strain.
+        """
+        return "Composite" in self.breed.split()
 
 
 class Pairing(BaseModel):

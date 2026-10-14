@@ -59,31 +59,50 @@ def test_breeder_round_trip_real_data() -> None:
     assert len(breeders) == 28, f"expected 28 rabbits, got {len(breeders)}"
     names = [b.name for b in breeders]
     assert len(names) == len(set(names)), "duplicate rabbit names"
+    # breeding pools are M70 and TAMUK; Composite is a separate excluded breed.
     for b in breeders:
-        assert b.strain in {"M70", "TAMUK", "Composite"}
+        assert b.strain in {"M70", "TAMUK"}
 
 
-def test_roster_strain_split_matches_design() -> None:
-    """The active roster matches the design's strain split (M70 + TAMUK only).
+def test_roster_breeding_pools_match_design() -> None:
+    """The breeding pools match the design (M70 NZW + TAMUK NZW only).
 
-    Guards against a strain count drifting or a Composite sneaking in as active.
-
-    NOTE (open item): data lists 4 active TAMUK bucks incl. ``vincent``
-    (TAMUK, not Composite). The design described Vincent as the excluded
-    Composite "diversity hire"; whether vincent breeds is UNRESOLVED and flagged
-    at the Phase 0 gate. The test pins the data as-is (4 bucks) until ruled.
+    Vincent is TAMUK Composite — a SEPARATE, excluded breed (the "diversity
+    hire"), NOT in the TAMUK breeding pool. So the TAMUK pool is 3 bucks, not 4.
     """
     raw = json.loads((DATA / "breeders.json").read_text(encoding="utf-8"))
-    active = [Breeder(**i) for i in raw if not i.get("culled")]
-    m70 = [b for b in active if b.strain == "M70"]
-    tamuk = [b for b in active if b.strain == "TAMUK"]
-    comp = [b for b in active if b.strain == "Composite"]
-    assert not comp, "Composite must be excluded from the active pool"
-    # Design split (as of data): 7 M70 does + 3 M70 bucks, 6 TAMUK does + 4 TAMUK bucks.
+    breeders = [Breeder(**i) for i in raw]
+    active = [b for b in breeders if not b.culled]
+
+    # Composite (any non-NZW breed) is absent from the active breeding pools.
+    composite = [b for b in active if b.is_composite]
+    assert [b.name for b in composite] == ["vincent"], (
+        f"expected only vincent as Composite, got {[b.name for b in composite]}"
+    )
+    assert all(b.is_composite for b in composite)
+    assert not any(b.is_composite for b in breeders if b.name != "vincent"), (
+        "only vincent should be Composite"
+    )
+
+    # Breeding pools: M70 NZW (3B/7D) and TAMUK NZW (3B/6D).
+    m70 = [b for b in active if b.strain == "M70" and not b.is_composite]
+    tamuk = [b for b in active if b.strain == "TAMUK" and not b.is_composite]
     assert len([b for b in m70 if not b.is_buck]) == 7
     assert len([b for b in m70 if b.is_buck]) == 3
     assert len([b for b in tamuk if not b.is_buck]) == 6
-    assert len([b for b in tamuk if b.is_buck]) == 4
+    assert len([b for b in tamuk if b.is_buck]) == 3
+    # Vincent is present in the roster but excluded from breeding.
+    assert "vincent" not in [b.name for b in m70 + tamuk]
+
+
+def test_vincent_is_composite_and_excluded() -> None:
+    """Vincent is the only Composite; Breeder flags him excluded from breeding."""
+    raw = json.loads((DATA / "breeders.json").read_text(encoding="utf-8"))
+    vin = [b for b in raw if b["name"] == "vincent"][0]
+    v = Breeder(**vin)
+    assert v.is_composite is True
+    assert v.strain == "TAMUK"  # origin label, but Composite breed → excluded
+    assert not v.culled  # healthy, just not part of the breeding program
 
 
 def test_recipe_sums_to_one_on_real_data() -> None:

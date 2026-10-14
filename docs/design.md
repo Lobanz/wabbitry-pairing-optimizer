@@ -62,8 +62,14 @@ estimate per-doe and mother-line reliability, and to plan trio-ability.
 
 Field semantics:
 
-- `breed` — combined strain + breed. Strain is the first token: `M70`, `TAMUK`,
-  or `Composite`. `Composite` is excluded from breeding.
+- `breed` — origin + breed label. Strain (the first token) is `M70` or `TAMUK`
+  — the two closed breeding pools, never crossed. **`TAMUK Composite` is a
+  SEPARATE, excluded breed** (the "diversity hire", e.g. Vincent) — not a TAMUK
+  pool member, never bred. The `Composite` token marks exclusion; it may appear
+  after the strain token (e.g. `"TAMUK Composite"`), so exclusion keys on the
+  `Composite` token, not just the first word. (TAMUK = Texas A&M University-
+  Kingsville, where the lines were developed; "M70" and "TAMUK" name the two
+  closed pools regardless.)
 - `gender` — `M` (buck) / `F` (doe).
 - `culled` — removed from the active pool (e.g. freezer) but kept as a valid
   parent reference. Excluded as a breeding candidate.
@@ -112,7 +118,9 @@ total_penalty}`.
 ## 3. Hard constraints
 
 1. **M70 x M70 only; TAMUK x TAMUK only.** Never cross pools.
-2. **Composite strain excluded** (e.g. Vincent).
+2. **Composite breed excluded** (e.g. Vincent — TAMUK Composite, the
+   "diversity hire"). Composite is a separate breed from M70 and TAMUK and never
+   breeds; exclusion keys on the `Composite` token in the breed label (§2).
 3. **Culled rabbits excluded** as candidates (kept as parents only).
 4. **All active does must be assigned** (7 M70 + 6 TAMUK), unless genuinely
    unavoidable. Pre-decided **fixed pairs** are treated as already-assigned (and
