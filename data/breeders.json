@@ -161,7 +161,6 @@
     "culled": false,
     "sire": "uno",
     "dam": "lily",
-    "parentage_uncertain": true,
     "recipe": {
       "zeek": 0.5,
       "abigail": 0.25,

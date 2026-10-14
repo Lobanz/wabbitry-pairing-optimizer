@@ -51,7 +51,6 @@ display tweaks to title-case names it prints.
   "founder": true,
   "sire": null,
   "dam": null,
-  "parentage_uncertain": false,
   "founder_sisters": ["betsy"],
   "recipe": { "abigail": 1.0 }
 }
@@ -72,20 +71,26 @@ Field semantics:
   whose identity terminates ancestry walks.
 - `sire` / `dam` — parent FK (name). `None` when unknown. A parent may be a
   culled rabbit (freezer) — that is valid; the pedigree reference persists.
-- `parentage_uncertain` — `sire`/`dam` are a best guess, not confirmed (e.g.
-  Opal, returned from a customer). Treated as a founder boundary when walking
-  ancestry — we do not over-trust guesses.
+- `parentage_uncertain` — **REMOVED (2026-10-15):** the operator ruled this is
+  not considered in code; the flag on Opal was removed from the data. Parentage
+  is taken at face value everywhere. (`sire`/`dam` of a customer-returned
+  rabbit are trusted as recorded.)
 - `founder_sisters` — list of founder does known to be siblings (e.g. abigail
   and betsy). This is the **only** sibling relationship that cannot be computed
   from parentage (founders have no recorded parents). Used to merge founder-
   sister blood when computing ancestry, so that two founders who are sisters are
   not counted as fully unrelated (this is the correction behind the
   Betsy-vs-Abigail fertility analysis).
-  - **There is NO stored `siblings` field.** For rabbits with parentage, a
+  - **There is NO stored `siblings` field.** For rabbits WITH parentage, a
     full-sibling set is **derived** from parentage: **Full-sibling ⟺ same
     `sire` AND same `dam`.** Group rabbits by the `(sire, dam)` pair to get
-    sibling sets. `founder_sisters` is kept as the sole exception for founders
-    (no parentage to compute from).
+    sibling sets. **Founders / rabbits with null parentage are EXCLUDED from
+    this grouping** — a rabbit with no recorded parents is a sibling only where
+    `founder_sisters` explicitly says so. (Grouping null-parentage rabbits by
+    `(None, None)` would falsely treat all unrelated founders — e.g. willy,
+    isabelle, yaz — as siblings; TAMUK currently has `vader = willy × isabelle`,
+    a legitimate breeding between two unrelated founders, so this rule error
+    would be active.) `founder_sisters` is the sole exception for founders.
 - `recipe` — precomputed ancestor-percentage vector for each breeder, summing to
   1.0. A map `{ancestor_name: contribution}` covering **every known ancestor**
   (NOT just founders, and NOT founder-sister-collapsed — keeping distinct
@@ -114,6 +119,35 @@ total_penalty}`.
    both sides excluded from the automated pools); any doe left with no buck is
    an order-trap artifact penalized in the full-solution score, and a sibling
    pairing is forced only as a last resort rather than leaving a doe unbred.
+5. **A doe is bred by exactly ONE buck** (one litter per doe per round); a buck
+   may breed **multiple does** (buck load allowed). (Confirmed 2026-10-15.)
+6. **Static plan, no mid-round re-breed:** the optimizer emits the round's
+   pairings as the decision. A doe that fails to kindle is re-bred at the
+   operator's real-world judgment in the field, not by the optimizer (the
+   plan is not re-derived mid-round). (Confirmed 2026-10-15.)
+7. **One breeding = AM + PM on the same day:** each doe gets two sessions with
+   the buck on one breeding day to confirm take; these are TWO PARTS OF ONE
+   BREEDING, not two breedings. After a buck services a doe (one breeding day),
+   it rests before the next doe (feeds the `2k−1` day schedule model).
+8. **Parent-offspring is NORMAL, allowed line-breeding (2026-10-15):** a buck
+   breeding his own daughter is standard livestock practice, NOT forbidden.
+   It is scored by the normal r (0.5, close tier) like any close pairing — not
+   a hard exclusion and not gated behind last-resort. Only **full-sib
+   same-generation** (brother × sister) carries the "last resort" concept.
+
+**"Feasible" is PERMISSIVE, not prescriptive (2026-10-15):** the constraint set
+(same strain, not the same rabbit, full-sib-as-last-resort) only defines what
+is *biologically permissible* — it does NOT narrow a doe to "the one correct
+buck." The optimizer is free to pick **very suboptimal pairings** if that is the
+**least-bad** option available; every permissible pairing stays on the table and
+is merely *ranked lower* by scoring, not eliminated. "Feasible" = allowed, never
+"the right choice."
+
+**Correction note (2026-10-15):** an earlier draft treated parent-offspring as
+an exclusion that forced some does to one buck (e.g. isabelle to willy). Under
+the correct line-breeding rule, those does have MORE feasible bucks (a buck may
+line-breed his daughters). The feasible-buck computation must NOT exclude
+parent-offspring; it is scored by r like any pairing.
 
 ## 4. Objectives
 
@@ -252,10 +286,15 @@ Each tier carries a **configurable penalty** (`[scoring.tier_penalty]`,
 |------|---------|---------|
 | Outcross | r ≤ `outcross_r_max` (default ~0.1) | `penalty_outcross` (0) |
 | Line-bred | above outcross, below ~0.5 | `penalty_line_bred` (1) |
-| Siblings / parent-offspring | r at/near 0.5 | `penalty_sibling` (5) |
+| Close (r≈0.5) | full-sib AND parent-offspring both sit at r=0.5 | `penalty_sibling` (5) |
 
-Siblings carry the heaviest penalty and are used **only** as a last resort to cover
-an otherwise-unbred doe (operator: "kinda bad but might be unavoidable").
+At r≈0.5, **full-sib** (brother × sister, same generation) is the **last-resort
+fallback** (allowed only when no other buck is feasible; operator: "kinda bad
+but might be unavoidable"). **Parent-offspring** (buck × daughter) is **normal,
+legitimate line-breeding** — allowed and scored by r like any close pairing,
+NOT gated behind last-resort. The tier penalty is shared, but the *eligibility
+rule* differs: full-sib needs a justification (it's the last resort), while
+parent-offspring is routine.
 
 ### Rationale for r over founder-set intersection
 
@@ -313,8 +352,10 @@ Per strain pool (M70, TAMUK), independent:
    productivity index (size + consistency, outliers trimmed, blended with
    mother by evidence) — see §8. (Fixed pairs like the Yaz decision already
    encode this choice.)
-5. Sibling-tier matches are allowed only when no lower-tier buck is available
-   for that doe (operator-approved last resort).
+5. **Full-sib (same-generation) matches are allowed only when no non-sib buck is
+   available** for that doe (operator-approved last resort). Parent-offspring is
+   NOT in this class — it is normal line-breeding, allowed freely and scored by
+   r (see §3 rule 8 / §5 tier).
 
 ## 7. Output
 
@@ -349,6 +390,14 @@ default; default CLI output `json`.
 The two layers are independent: `--output` selects the program's emission
 language; the result content is dual-format by design.
 
+**`--output` is NOT a config-file parameter.** It only governs the terminal
+emission format (help/version/errors/status), a CLI-level concern, so it does
+NOT appear in `config.toml`. By contrast the `[output]` config section holds the
+*result artifact* settings (`output_dir`, result filenames, log file) — where and
+to what names things are *written*, which IS operator policy. These are two
+different concepts: CLI `--output` = how the program talks on stdout; `[output]`
+config = where the result files land.
+
 - `--pairs <file>` — optional path to a JSON file of **pre-decided pairings**,
   a list of `Pairing` objects matching the output schema, e.g.
   `[{"sire":"yaz","dam":"betty"}, ...]`. Each fixed pair is removed from the
@@ -358,8 +407,8 @@ language; the result content is dual-format by design.
 - `--config <file>` — path to a **TOML config** carrying the operator-policy
   knobs (see Config section). Default `data/config.toml`.
 - `--output-dir <dir>` — the single destination directory **everything written
-  out lands in** (default from `[output]` config, e.g. `out/`). The dual-format
-  result + table artifacts all go here:
+  out lands in** (default from `[output]` config, e.g. `out/`). Result + table
+  artifacts and the **run log** all go here:
   - `<outdir>/wabbitry-report.json` — structured result (pairings + rationale
     scores, full-solution score breakdown) incl. the kinship and doe-productivity
     tables as data. For agents/software.
@@ -369,9 +418,23 @@ language; the result content is dual-format by design.
     deliverable.
   - `<outdir>/kinship-table.csv` — r matrix as standalone data
   - `<outdir>/doe-productivity.csv` — doe index / own-vs-mother as standalone data
+  - `<outdir>/<log_filename>` — the **run log file** (default
+    `wabbitry-run.log`), configured by `[output] log_filename`/`log_level`/
+    `log_format`. **Logging goes to this file, not stdout**, so CLI emissions stay
+    clean and the audit trail persists on disk. `json` format = JSON-lines
+    (structured, agent-greppable); `text` = human-readable.
   (Filenames are configurable in `[output]`, not magic.) Terminal stdout is for
-  program emissions per `--output json|text`; the result artifacts are files in
-  the output-dir.
+  program emissions per `--output json|text`; result artifacts and the log are
+  files in the output-dir.
+
+**Storing the used result in git (2026-10-15):** `out/` is the **transient,
+gitignored** location for run artifacts (regenerated each run; churny). The
+**final result the operator actually uses is deliberately promoted into `data/`**
+and committed to git — e.g. `data/round-<season>-<year>.json` (the chosen
+pairings + scores). Promotion is a **manual, human act** (the program only
+writes to `out/`; the operator promotes the decided output into `data/` and
+commits), so git history records each round's decision as a durable, auditable
+artifact — not silently overwritten by later runs.
 - `--min-runs N`, `--stall N` — optimization run control (see §6 step 3;
   defaults e.g. MIN_RUNS=500, STALL_LIMIT=100).
 
@@ -446,7 +509,12 @@ opaque number hiding the weight choices.
 
 All tunable, opinion values live in a **TOML config file** (default
 `data/config.toml`) so every policy choice is visible, tweakable, and auditable
-in one place rather than scattered as constants. Structure:
+in one place rather than scattered as constants. **Precedence (2026-10-15), top
+wins:** **CLI params → config-file values → reasonable built-in defaults.** So a
+param resolves: an explicit CLI flag (`--output`, `--output-dir`, `--config`,
+`--min-runs`, `--stall`, …) overrides the config file, which overrides the
+built-in default. The built-ins in `data/config.toml` are sensible starters we
+can fine-tune later. There are no non-configurable magic constants. Structure:
 
 ```toml
 [kinship]
@@ -493,6 +561,9 @@ report_json = "wabbitry-report.json"
 report_md = "wabbitry-report.md"
 kinship_table_csv = "kinship-table.csv"
 doe_productivity_csv = "doe-productivity.csv"
+log_filename = "wabbitry-run.log"  # run log written to output-dir (not stdout)
+log_level = "INFO"
+log_format = "json"          # "json" (JSON-lines) or "text"
 ```
 
 Weights are a **stated operator policy** (an opinion, not a fact) and are

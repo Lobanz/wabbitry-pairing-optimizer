@@ -4,6 +4,70 @@ Status: **Draft for operator review.** Gate: after review, the operator gives an
 explicit 'go' before any code is written (matches the standing design-first
 protocol).
 
+## ESL conformance
+
+This project aligns with the ESL engineering-standards library
+(`~/projects/eslbundle/standards/`, `AGENT-STANDARDS.md`). The Python module
+(`languages/python.impl.md`, status **Active (partial)**) applies. Conformance
+obligations for this implementation:
+
+**Tooling (already configured in `pyproject.toml`):**
+- `ruff` = formatter + linter (no black/flake8/isort/pydocstyle). Rule sets
+  selected: `E,F,W,I,N,D,ANN,B,UP,S`. `ruff format --check` + `ruff check` in
+  the project scripts.
+- `mypy --strict` (strict from first commit; **no loose-then-tight migration**).
+- `pytest` as test runner; production code never imports `pytest`.
+- **Commands wrapped in project scripts** — `scripts/check.sh` / `scripts/test.sh`
+  are the canonical entry points (pre-commit + CI invoke them; humans run them
+  before push).
+
+**Type hints:** every public function/method/attribute typed; `Any` requires a
+`# REASON:` comment; parameters use the most general protocol type (`Sequence`,
+`Mapping`) while returns use the concrete type.
+
+**Docstrings:** Google format; docstring required on every public module, class,
+method, function; module docstring on every module (the Python expression of the
+module-headers rule). Rendered by ruff `D` rules.
+
+**Imports:** grouped stdlib → third-party → local, alphabetized (`I`); absolute
+across packages; no star imports (`F403/F405`).
+
+**Module structure:** one concern per file (`one-concern-per-file` — reinforces
+the dependency-DAG principle); `__all__` when the public API is a curated subset;
+`__init__.py` re-exports API or is empty (no implementation).
+
+**No magic literals** (Python expression): named constants in
+`SCREAMING_SNAKE_CASE` with `Final`; related constant sets as `Enum`; compound
+constants as `frozen` dataclasses. (Config values live in `config.toml`, not
+code — design §9.)
+
+**Error handling:** raise exceptions, never error codes/Result-tuples; a
+project base exception class; custom classes per error category; bare `except`
+forbidden; broad `except Exception:` needs `# REASON:`; re-raise with `from`.
+
+**Logging:** `logger = logging.getLogger(__name__)` at module top; structured
+emissions via `extra`, not string formatting in the message (`ruff G004`);
+never log secrets.
+
+**Testing:** `test_<unit>_<scenario>_<expected_outcome>` naming;
+`@pytest.mark.parametrize` for input/output tables; fixtures declare non-function
+scope explicitly; `tests/` mirrors source structure.
+
+**Python-specific security:** no `eval`/`exec`/`compile` on untrusted input;
+no pickle deserialization (use json + pydantic); no `subprocess(..., shell=True)`
+with user input; `secrets` (not `random`) for any security-sensitive value;
+`with` context managers for all resources.
+
+**Stubs / partial status:** the Python module has stubbed sections (async,
+concurrency, class design, runtime validation, web, ORM, packaging, performance).
+Where a stubbed topic would be load-bearing, follow `core/engineering-principles:
+ask-before-assume` — fall back to community convention or ask the operator.
+
+**Where this bites per phase:** Phase 0 confirms tooling+models conform; each
+later phase's code is written against these rules, and `scripts/check.sh`
+(ruff S-bandit + mypy strict) is the mechanical gate every phase must pass
+before its reassessment gate.
+
 ## Operating principles (operator-set, non-negotiable)
 
 - **Phases are reassessment gates, not checkpoints.** Between phases — and inside
@@ -58,7 +122,7 @@ Deliverables:
   `scripts/test.sh` run clean on the current scaffold (models.py exists).
 - `models.py` — finalize pydantic models to match design §2/§7/§8:
   `Breeder` (lowercase name, breed, gender, culled, founder, sire, dam,
-  parentage_uncertain, founder_sisters, recipe), `Pairing` (sire, dam, kinship,
+  founder_sisters, recipe), `Pairing` (sire, dam, kinship,
   penalty, scores, pair_type), `Solution` (pairings, per-pairing scores,
   full-solution score components, schedule, pairability), `Config`.
 - `config.py` — load `data/config.toml` into `Config`; TOML section mapping

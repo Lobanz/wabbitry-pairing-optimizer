@@ -25,7 +25,6 @@ class Breeder(BaseModel):
             treated as an unrelated founder.
         sire: Name of the sire (father), or None if unknown.
         dam: Name of the dam (mother), or None if unknown.
-        parentage_uncertain: True if sire/dam are a best guess, not confirmed.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -33,12 +32,12 @@ class Breeder(BaseModel):
     name: str
     breed: str
     gender: str
-    siblings: list[str] = []
     culled: bool = False
     founder: bool = False
     sire: str | None = None
     dam: str | None = None
-    parentage_uncertain: bool = False
+    founder_sisters: list[str] = []
+    recipe: dict[str, float] = {}
 
     @property
     def is_buck(self) -> bool:

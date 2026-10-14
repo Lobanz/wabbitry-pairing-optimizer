@@ -71,3 +71,7 @@ report_json = "wabbitry-report.json"
 report_md = "wabbitry-report.md"
 kinship_table_csv = "kinship-table.csv"
 doe_productivity_csv = "doe-productivity.csv"
+# Log file in the output dir (not stdout - keeps CLI emissions clean).
+log_filename = "wabbitry-run.log"
+log_level = "INFO"          # DEBUG/INFO/WARNING/ERROR
+log_format = "json"         # "json" (JSON-lines, agent-friendly) or "text"
