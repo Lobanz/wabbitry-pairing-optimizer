@@ -45,6 +45,7 @@ class ProductivityConfig(BaseModel):
         size_weight: Weight of avg-litter-size component.
         consistency_weight: Weight of consistency component.
         evidence_k: Blend constant K; w_own = own_count / (own_count + K).
+        outlier_trim: Whether to trim outliers before averaging size.
         outlier_method: "iqr" or "zscore" for trimming litter outliers.
         outlier_threshold: Threshold for the outlier method (IQR mult / zscore sd).
     """
@@ -54,6 +55,7 @@ class ProductivityConfig(BaseModel):
     size_weight: float = 0.6
     consistency_weight: float = 0.4
     evidence_k: float = 2.0
+    outlier_trim: bool = True
     outlier_method: str = "iqr"
     outlier_threshold: float = 1.5
 
