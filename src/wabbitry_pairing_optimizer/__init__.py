@@ -19,8 +19,12 @@ from wabbitry_pairing_optimizer.config import (
     load_config,
 )
 from wabbitry_pairing_optimizer.kinship import (
+    PairTier,
+    RelationshipKind,
     coancestry_matrix_r,
     full_sibling_sets,
+    relationship_kind,
+    tier_for_pair,
     tier_for_r,
 )
 from wabbitry_pairing_optimizer.load_breeders import (
@@ -47,6 +51,10 @@ from wabbitry_pairing_optimizer.recipe import (
     RecipeError,
     verify_recipes,
 )
+from wabbitry_pairing_optimizer.scoring import (
+    full_solution_score,
+    per_pairing_score,
+)
 
 __all__ = [
     "Breeder",
@@ -62,9 +70,11 @@ __all__ = [
     "PairabilityConfig",
     "Pairing",
     "PairingReport",
+    "PairTier",
     "PerPairingConfig",
     "ProductivityConfig",
     "RecipeError",
+    "RelationshipKind",
     "ScoringConfig",
     "Solution",
     "SolutionScore",
@@ -72,10 +82,14 @@ __all__ = [
     "coancestry_matrix_r",
     "doe_production_scores",
     "full_sibling_sets",
+    "full_solution_score",
     "load_breeders",
     "load_config",
     "load_litters",
+    "per_pairing_score",
     "productivity_index",
+    "relationship_kind",
+    "tier_for_pair",
     "tier_for_r",
     "verify_recipes",
 ]
