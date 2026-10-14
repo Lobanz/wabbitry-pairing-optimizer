@@ -46,3 +46,18 @@ and the report states it.
   scores) are emitted — not top-N, no ledger.
 - Weights are tunable in config with no code change (see ADR 0007).
 - The scoring artifacts are a stated operator policy, auditable in the report.
+
+## Amendment (2026-10-15, operator ruling at the Phase 3 gate)
+
+The tier label is **relationship-aware**, not r-only. Probing the real roster
+showed r≥0.5 conflates three very different cases:
+- **parent-offspring** (e.g. zeek × abby, r=0.5) = NORMAL, allowed line-breeding
+  (design §3 rule 8) -> tier `line_bred` (penalty 1).
+- **founder-sister** (abigail × betsy, ginseng × harmony, r=0.5 via S) =
+  legitimate founder diversity -> tier `line_bred` (penalty 1).
+- **true same-generation full-sib** (same sire+dam: abby × amber, betty × lily)
+  = last-resort -> tier `sibling` (penalty 5).
+
+Only true full-sibs carry the heavy sibling penalty; parent-offspring and
+founder-sisters do not. Enforced via `relationship_kind()` + `tier_for_pair()`
+in kinship.py. Penalty values remain operator-policy in config.

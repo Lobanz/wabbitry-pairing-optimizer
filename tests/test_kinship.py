@@ -15,6 +15,8 @@ from wabbitry_pairing_optimizer.kinship import (
     PairTier,
     coancestry_matrix_r,
     full_sibling_sets,
+    relationship_kind,
+    tier_for_pair,
     tier_for_r,
 )
 from wabbitry_pairing_optimizer.load_breeders import load_breeders
@@ -128,3 +130,32 @@ def test_tiers(roster, kinship) -> None:
     assert tier_for_r(kinship.outcross_r_max, kinship) == PairTier.OUTCROSS
     assert tier_for_r(0.3, kinship) == PairTier.LINE_BRED
     assert tier_for_r(0.5, kinship) == PairTier.SIBLING
+
+
+def test_tier_for_pair_relationship_aware(roster, kinship) -> None:
+    """Operator ruling: parent-offspring and founder-sisters are line-bred (1),
+    only true same-gen full-sibs are 'sibling' (5). Distinguishes what r-only
+    tiering conflates at r=0.5."""
+    # parent-offspring (r=0.5) -> LINE_BRED, NOT sibling.
+    assert tier_for_pair("zeek", "abby", roster, 0.5, kinship) == PairTier.LINE_BRED
+    assert tier_for_pair("betsy", "lily", roster, 0.5, kinship) == PairTier.LINE_BRED
+    assert tier_for_pair("isabelle", "vader", roster, 0.5, kinship) == PairTier.LINE_BRED
+    # founder-sister (r=0.5 via S) -> LINE_BRED, NOT sibling.
+    assert tier_for_pair("abigail", "betsy", roster, 0.5, kinship) == PairTier.LINE_BRED
+    assert tier_for_pair("ginseng", "harmony", roster, 0.5, kinship) == PairTier.LINE_BRED
+    # true full-sib (same sire+dam) -> SIBLING.
+    assert tier_for_pair("abby", "amber", roster, 0.5, kinship) == PairTier.SIBLING
+    assert tier_for_pair("betty", "kiki", roster, 0.5, kinship) == PairTier.SIBLING
+    assert tier_for_pair("iris", "jade", roster, 0.5, kinship) == PairTier.SIBLING
+    # ordinary r-driven fallback still works for non-close pairs.
+    assert tier_for_pair("yaz", "betty", roster, 0.0, kinship) == PairTier.OUTCROSS
+    assert tier_for_pair("abby", "betty", roster, 0.375, kinship) == PairTier.LINE_BRED
+
+
+def test_relationship_kind(roster) -> None:
+    """relationship_kind correctly classifies the real pedigree pairs."""
+    assert relationship_kind("zeek", "abby", roster) == "parent_offspring"
+    assert relationship_kind("abby", "amber", roster) == "full_sib"
+    assert relationship_kind("abigail", "betsy", roster) == "founder_sister"
+    assert relationship_kind("ginseng", "harmony", roster) == "founder_sister"
+    assert relationship_kind("yaz", "betty", roster) == "other"
