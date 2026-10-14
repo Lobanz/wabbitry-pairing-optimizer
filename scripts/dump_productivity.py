@@ -35,20 +35,25 @@ def main() -> int:
     scores = doe_production_scores(roster, litters, cfg.productivity)
     by = {b.name: b for b in roster}
 
-    print(f"# Doe productivity index (config: size_w={cfg.productivity.size_weight}, "
-          f"consistency_w={cfg.productivity.consistency_weight}, "
-          f"K={cfg.productivity.evidence_k}, trim={cfg.productivity.outlier_trim}:{cfg.productivity.outlier_method})")
-    print(f"# Higher = more reliable producer (own litters, blended with dam by evidence)\n")
+    print(
+        f"# Doe productivity index (config: size_w={cfg.productivity.size_weight}, "
+        f"consistency_w={cfg.productivity.consistency_weight}, "
+        f"K={cfg.productivity.evidence_k}, trim={cfg.productivity.outlier_trim}: "
+        f"{cfg.productivity.outlier_method})"
+    )
+    print("# Higher = more reliable producer (own litters, blended with dam by evidence)\n")
 
     header = f"{'doe':<10}{'strain':<8}{'idx':>7}  {'own_n':>5}  {'dam':<9}{'dam_n':>5}"
     print(header)
     print("-" * len(header))
     for name in sorted(scores, key=lambda n: -scores[n]):
         b = by[name]
-        own_n = sum(1 for l in litters if l.dam == name)
-        dam_n = sum(1 for l in litters if l.dam == b.dam) if b.dam else 0
-        print(f"{name:<10}{b.strain:<8}{scores[name]:>7.3f}  {own_n:>5}  "
-              f"{(b.dam or '-'):<9}{dam_n:>5}")
+        own_n = sum(1 for lit in litters if lit.dam == name)
+        dam_n = sum(1 for lit in litters if lit.dam == b.dam) if b.dam else 0
+        print(
+            f"{name:<10}{b.strain:<8}{scores[name]:>7.3f}  {own_n:>5}  "
+            f"{(b.dam or '-'):<9}{dam_n:>5}"
+        )
 
     return 0
 
