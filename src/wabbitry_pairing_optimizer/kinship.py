@@ -91,9 +91,11 @@ def coancestry_matrix_r(
                 return cfg.sister_factor / 2.0
             return 0.0
         if ra.sire is None and ra.dam is None:
-            return 0.25 * (f(a, rb.sire) + f(a, rb.dam))
+            # a is a founder, b has parents: a random allele of b comes from each
+            # parent with prob 1/2, so f(a,b) = avg over the two parents.
+            return 0.5 * (f(a, rb.sire) + f(a, rb.dam))
         if rb.sire is None and rb.dam is None:
-            return 0.25 * (f(ra.sire, b) + f(ra.dam, b))
+            return 0.5 * (f(ra.sire, b) + f(ra.dam, b))
         return 0.25 * (
             f(ra.sire, rb.sire) + f(ra.sire, rb.dam) + f(ra.dam, rb.sire) + f(ra.dam, rb.dam)
         )

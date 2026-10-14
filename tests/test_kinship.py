@@ -87,6 +87,26 @@ def test_no_distinct_exceeds_half(roster, kinship) -> None:
         assert r >= 0.0, f"negative r({a},{b})={r}"
 
 
+def test_founder_relationships(roster, kinship) -> None:
+    """A founder is unrelated to everything except descendants.
+
+    Regression test: the founder→nonfounder recursion branch must use factor
+    0.5 (not 0.25), so parent-offspring r = 0.5. isabelle is a founder (dam of
+    vader & xerces, mate of willy).
+    """
+    mat = coancestry_matrix_r(roster, kinship)
+    # Founder parents: unrelated to their mate/themselves-equals-nothing.
+    assert mat[_pair("isabelle", "willy")] == pytest.approx(0.0, abs=1e-9)
+    assert mat[_pair("willy", "yaz")] == pytest.approx(0.0, abs=1e-9)
+    # Founder parent→offspring = 0.5 (parent-offspring, normal line-breeding).
+    assert mat[_pair("isabelle", "vader")] == pytest.approx(0.5, abs=1e-9)
+    assert mat[_pair("isabelle", "xerces")] == pytest.approx(0.5, abs=1e-9)
+    assert mat[_pair("willy", "vader")] == pytest.approx(0.5, abs=1e-9)
+    assert mat[_pair("willy", "fiona")] == pytest.approx(0.5, abs=1e-9)
+    # Offspring sharing one founder parent are half-siblings (0.25).
+    assert mat[_pair("vader", "xerces")] == pytest.approx(0.25, abs=1e-9)
+
+
 def test_sibling_sets_correct(roster) -> None:
     """Sibling derivation: same (sire,dam), founders excluded; sibling sets match."""
     sets = full_sibling_sets(roster)
