@@ -55,6 +55,7 @@ from wabbitry_pairing_optimizer.scoring import (
     full_solution_score,
     per_pairing_score,
 )
+from wabbitry_pairing_optimizer.solve import solve
 
 __all__ = [
     "Breeder",
@@ -89,6 +90,7 @@ __all__ = [
     "per_pairing_score",
     "productivity_index",
     "relationship_kind",
+    "solve",
     "tier_for_pair",
     "tier_for_r",
     "verify_recipes",
