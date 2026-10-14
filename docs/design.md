@@ -252,6 +252,15 @@ The two-pass objective:
 2. **Full-solution:** maximize offspring **pairability** (mixed-trio count via
    the cheap mixed-pair proxy), driving run selection.
 
+**Closeness policy (2026-10-15): keep it simple for now.** Minimize total r —
+more outcross is better as the default. Deliberate line-breeding to lock in
+desirable traits happens via **operator fixed-pairs** (e.g. Yaz × the Betsy
+line), not something the optimizer seeks on its own. The closeness objective and
+its weight are **functionalized/seams** (isolated, config-weighted components) so
+a later "target closeness band" or "line-breeding preference" can be added
+without touching the solver — but the shipped default is straightforward
+outcross-minimization.
+
 ## 5. Kinship model
 
 **Coefficient of relationship (r)** — the standard genetics measure, computed from
