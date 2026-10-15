@@ -228,8 +228,8 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
     lines.append("## Pairings")
     lines.append("")
     rows = sorted(sol.pairings, key=lambda x: (x.dam, x.sire))
-    lines.append("| Buck | Doe | Doe Score | Tier | Related | Pair Score | Warning |")
-    lines.append("|-|-|-|-|-|-|-|")
+    lines.append("| Buck | Doe | Doe Score | Related | Pair Score | Warning |")
+    lines.append("|-|-|-|-|-|-|")
     for p in rows:
         warns = _pairing_warnings(p, sol, report.breeders)
         fixed_mark = " *(fixed)*" if p.fixed else ""
@@ -238,7 +238,6 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
         hist_text = f"{hist:.2f}" if hist is not None else "—"
         lines.append(
             f"| {_title(p.sire)} | {_title(p.dam)}{fixed_mark} | {hist_text} "
-            f"| {p.pair_type} "
             f"| {p.kinship_r * 100:.0f}% | {p.final_score:+.3f} | {warn_text} |"
         )
     lines.append("")
