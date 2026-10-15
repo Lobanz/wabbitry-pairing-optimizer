@@ -51,6 +51,7 @@ from wabbitry_pairing_optimizer.recipe import (
     RecipeError,
     verify_recipes,
 )
+from wabbitry_pairing_optimizer.schedule import build_schedule
 from wabbitry_pairing_optimizer.scoring import (
     full_solution_score,
     per_pairing_score,
@@ -80,6 +81,7 @@ __all__ = [
     "Solution",
     "SolutionScore",
     "TierPenaltyConfig",
+    "build_schedule",
     "coancestry_matrix_r",
     "doe_production_scores",
     "full_sibling_sets",

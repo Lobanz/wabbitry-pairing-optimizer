@@ -16,7 +16,56 @@ from collections import Counter
 
 from wabbitry_pairing_optimizer.models import Pairing
 
-__all__ = ["schedule_days"]
+__all__ = ["build_schedule", "schedule_days"]
+
+
+def build_schedule(
+    pairings: list[Pairing],
+    max_bucks_per_day: int,
+) -> dict[int, list[Pairing]]:
+    """Build the day-by-day breeding calendar.
+
+    Who gets bred on which day, given a max number of bucks that can breed on a
+    single day. Model (design §8 comp 5, operator rules):
+
+    - a buck breeds at most one doe per day;
+    - at most ``max_bucks_per_day`` distinct bucks breed on any one day
+      (0 / negative = unlimited: every buck with does remaining breeds each day);
+
+    No rest days: a buck with several does simply breeds one per consecutive
+    day. Assignment is deterministic: bucks are taken in sorted-name order each
+    day, selecting the first eligible (still-has-does) ``max_bucks_per_day``.
+
+    Args:
+        pairings: All pairings for the round.
+        max_bucks_per_day: Max distinct bucks that can breed in a single day.
+
+    Returns:
+        Mapping ``day -> [Pairing, ...]`` for days 1..round length. Day start
+        at 1; empty iff ``pairings`` is empty.
+    """
+    if not pairings:
+        return {}
+    by_buck: dict[str, list[Pairing]] = {}
+    for p in pairings:
+        by_buck.setdefault(p.sire, []).append(p)
+    # Deterministic buck + doe ordering.
+    remaining = {b: sorted(ps, key=lambda x: x.dam) for b, ps in by_buck.items()}
+    unlimited = max_bucks_per_day <= 0
+    schedule: dict[int, list[Pairing]] = {}
+    day = 1
+    while remaining:
+        eligible = [b for b in sorted(remaining) if remaining[b]]
+        chosen = eligible if unlimited else eligible[:max_bucks_per_day]
+        if chosen:
+            today: list[Pairing] = []
+            for b in chosen:
+                today.append(remaining[b].pop(0))
+                if not remaining[b]:
+                    del remaining[b]
+            schedule[day] = today
+        day += 1
+    return schedule
 
 
 def schedule_days(pairings: list[Pairing], buck_batch_capacity: int) -> int:

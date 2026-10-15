@@ -64,6 +64,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--config", metavar="FILE", default="data/config.toml")
     parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="override PRNG seed (0 = random); positive fixes it for reproducibility",
+    )
+    parser.add_argument(
         "--output",
         choices=("json", "text"),
         default="json",
@@ -92,19 +98,105 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    # Solver + rendering + config load are wired in Phase 4/5. The convention is
-    # established; the argument contract is parsed. A bare run reports staged.
-    _emit(
-        emission,
-        {
-            "command": "status",
-            "note": "CLI convention established (Phase 0); solver wired in Phase 4.",
-            "breeders": getattr(pre, "breeders", "data/breeders.json"),
-        }
-        if emission == "json"
-        else "wabbitry-pairing-optimizer: staged (Phase 0); solver lands in Phase 4.",
-    )
-    return 0
+    # --- Run the full round (solver + render). ---
+    try:
+        import json as _json
+        from pathlib import Path
+
+        from wabbitry_pairing_optimizer import (
+            coancestry_matrix_r,
+            doe_production_scores,
+            load_breeders,
+            load_config,
+            load_litters,
+        )
+        from wabbitry_pairing_optimizer.logging import get_logger, setup_logging
+        from wabbitry_pairing_optimizer.render import build_report, write_artifacts
+        from wabbitry_pairing_optimizer.schedule import build_schedule
+        from wabbitry_pairing_optimizer.solve import solve
+
+        cfg = load_config(getattr(pre, "config", "data/config.toml"))
+        # CLI --seed overrides the config value (precedence: CLI -> config).
+        cli_seed = getattr(pre, "seed", None)
+        if cli_seed is not None:
+            cfg = cfg.model_copy(
+                update={"optimization": cfg.optimization.model_copy(update={"seed": cli_seed})}
+            )
+        breeders = load_breeders(getattr(pre, "breeders", "data/breeders.json"))
+        litters_dir = str(Path(getattr(pre, "breeders", "data/breeders.json")).parent / "litters")
+        litters = load_litters(litters_dir, known_rabbits={b.name for b in breeders})
+
+        # Fixed pairs from --pairs (list of {"sire","dam"}).
+        fixed_pairs: list[tuple[str, str]] = []
+        pairs_file = getattr(pre, "pairs", None)
+        if pairs_file:
+            with open(pairs_file, encoding="utf-8") as fh:
+                for entry in _json.load(fh):
+                    fixed_pairs.append((entry["sire"], entry["dam"]))
+
+        # Resolve the output directory (CLI overrides config default) + log.
+        output_dir = getattr(pre, "output_dir", None) or cfg.output.output_dir
+        setup_logging(cfg.output, output_dir)
+
+        solution = solve(breeders, litters, cfg, fixed_pairs=fixed_pairs)
+        mat = coancestry_matrix_r(breeders, cfg.kinship)
+        prod = doe_production_scores(breeders, litters, cfg.productivity)
+        fixed_pairings = [p for p in solution.pairings if p.fixed]
+        report = build_report(solution, breeders, fixed_pairings, mat, prod)
+        max_bucks = cfg.optimization.buck_batch_capacity
+        written = write_artifacts(
+            output_dir,
+            report,
+            cfg.optimization.seed,
+            mat,
+            prod,
+            cfg.output,
+            max_bucks_per_day=max_bucks,
+        )
+
+        # Day-batch calendars (both modes) for the JSON consumer.
+        def _cal(mode: int) -> dict[str, list[str]]:
+            return {
+                f"Day {d}": [f"{p.sire} x {p.dam}" for p in ps]
+                for d, ps in sorted(build_schedule(solution.pairings, mode).items())
+            }
+
+        _emit(
+            emission,
+            {
+                "command": "solve",
+                "output_dir": output_dir,
+                "artifacts": written,
+                "seed": cfg.optimization.seed,
+                "schedule_days": solution.schedule_days,
+                "pairability_count": solution.pairability_count,
+                "unbred_does": solution.unbred_does,
+                "final_score": solution.score.final,
+                "n_pairings": len(solution.pairings),
+                "schedule_capped_at": max_bucks,
+                "schedule_capped": _cal(max_bucks),
+                "schedule_all_bucks": _cal(0),
+            }
+            if emission == "json"
+            else (
+                f"Breeding round solved: {len(solution.pairings)} pairings, "
+                f"final score {solution.score.final:+.2f}, "
+                f"{solution.schedule_days} days, unbred={solution.unbred_does or 'none'}.\n"
+                f"Artifacts written to {output_dir}/"
+            ),
+        )
+        logger = get_logger()
+        logger.info(
+            "solved round: seed=%d pairings=%d final=%.2f days=%d",
+            cfg.optimization.seed,
+            len(solution.pairings),
+            solution.score.final,
+            solution.schedule_days,
+        )
+        return 0
+    except Exception as exc:  # noqa: BLE001 - surface run errors uniformly
+        _emit(emission, {"command": "error", "error": str(exc)})
+        return 1
 
 
 if __name__ == "__main__":
