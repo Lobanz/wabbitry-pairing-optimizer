@@ -228,7 +228,7 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
     lines.append("## Pairings")
     lines.append("")
     rows = sorted(sol.pairings, key=lambda x: (x.dam, x.sire))
-    lines.append("| Buck | Doe | Doe History | Tier | Related | Score | Warning |")
+    lines.append("| Buck | Doe | Doe Score | Tier | Related | Pair Score | Warning |")
     lines.append("|-|-|-|-|-|-|-|")
     for p in rows:
         warns = _pairing_warnings(p, sol, report.breeders)
