@@ -15,7 +15,7 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 __all__ = ["Config", "ConfigError", "load_config"]
 
@@ -171,6 +171,28 @@ class OutputConfig(BaseModel):
     log_filename: str = "wabbitry-run.log"
     log_level: str = "INFO"
     log_format: str = "json"
+
+    @field_validator(
+        "report_json",
+        "report_md",
+        "kinship_table_csv",
+        "doe_productivity_csv",
+        "log_filename",
+    )
+    @classmethod
+    def _filename_is_plain(cls, v: str) -> str:
+        """Reject filenames that could escape the output dir (path traversal).
+
+        Output artifact filenames are operator-supplied config, so a name with
+        an absolute path, a `..` segment, or a path separator would redirect
+        writes outside the intended ``output_dir``. Fail fast at load.
+        """
+        p = Path(v)
+        if p.is_absolute() or any(part == ".." for part in p.parts):
+            raise ValueError(f"output filename must be a plain name, got {v!r}")
+        if "/" in v or "\\" in v or p.name != v:
+            raise ValueError(f"output filename must be a single name, got {v!r}")
+        return v
 
 
 class Config(BaseModel):
