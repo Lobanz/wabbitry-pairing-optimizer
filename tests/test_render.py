@@ -97,8 +97,9 @@ def test_markdown_report_content(roster, litters, config) -> None:
     assert "Wascally Wabbitry" in md
     assert "full-solution score" in md.lower()
     assert "**final**" in md
-    # Pairings rendered as a table with the expected column header.
-    assert "| Buck | Doe | Doe Score | Tier | Related | Pair Score | Warning |" in md
+    # Pairings rendered as a table with the expected column header (no Tier column).
+    assert "| Buck | Doe | Doe Score | Related | Pair Score | Warning |" in md
+    assert "| Tier |" not in md
     # Doe Score column shows the productivity index for a paired doe.
     opal_hist = report.doe_productivity.get("opal")
     if opal_hist is not None:
