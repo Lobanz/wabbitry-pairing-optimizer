@@ -385,6 +385,12 @@ Per strain pool (M70, TAMUK), independent:
      excluded from auto pools upstream). Because doe order is shuffled each
      run, the knobs interact with the multi-start search as intended, and the
      full-solution score then ranks genuinely different (spread) candidates.
+     **Settled policy (operator, 2026-10-15): SOFT-ONLY.** `load_penalty` is the
+     active lever (default 0.5); the hard cap stays in the code but is OFF by
+     default. Verified across seed-42 variants: soft spreads TAMUK 2/2/2 while
+     the cap (alone or with soft) also forces M70 over-spread (Zack sheds Opal
+     to her sire Uno) for no sire-diversity gain — soft wins on distinct-sire
+     count and has no tight-pool unbred failure mode.
 4. **Doe production history** is the primary tiebreaker when r ties: rank does
    by their own (or mother's, where own is thin) litter history via the doe
    productivity index (size + consistency, outliers trimmed, blended with
@@ -595,7 +601,7 @@ buck_batch_capacity = 4      # concurrent bucks operated at once (batching)
 
 [diversity]
 max_does_per_buck = 0        # hard cap: a buck takes <= N does (0 = off); one policy, both strains
-load_penalty = 0.0           # soft: score drops by this per doe a buck already holds (0 = off)
+load_penalty = 0.5           # soft: score drops by this per doe a buck already holds (preferred default)
 
 [output]
 output_dir = "out"           # default destination dir for result artifacts

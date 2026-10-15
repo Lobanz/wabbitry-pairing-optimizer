@@ -82,21 +82,24 @@ def test_load_penalty_spreads_across_sires(roster, litters, config) -> None:
     assert _max_sire_load(sol) <= 2
 
 
-def test_diversity_disabled_by_default(roster, litters, config) -> None:
-    """The diversity knobs default OFF — autopairing behaves like no levers exist."""
+def test_diversity_default_soft_on_cap_off(roster, litters, config) -> None:
+    """Default policy = soft penalty ON (0.5), hard cap OFF (0)."""
+    # The operator's settled default: soft-only spread, cap available-but-off.
     assert config.diversity.max_does_per_buck == 0
-    assert config.diversity.load_penalty == 0.0
-    # Same fixed seed + run budget with all knobs off is deterministic, and a
-    # zero knob is the identity operation: the outcome matches itself.
-    cfg = _fixed_seed_config(config)  # knobs still 0
-    a = solve(roster, litters, cfg, fixed_pairs=FIXED)
-    b = solve(roster, litters, cfg, fixed_pairs=FIXED)
-    # Fixed seed -> reproducible even though no diversity knobs are active.
-    assert [(p.sire, p.dam) for p in a.pairings] == [(p.sire, p.dam) for p in b.pairings]
-    # The no-lever run spreads no more than baseline: with knobs 0, a buck
-    # stays free to take many does (no hidden forced spread). If a future
-    # maintainer makes a zero knob silently force spread, this goes red.
-    assert _max_sire_load(a) > 2
+    assert config.diversity.load_penalty == 0.5
+    # Default config spreads the flagged TAMUK pool: with soft on, no TAMUK
+    # buck runs away with the does (baseline put 4 of 6 on Vader; soft keeps
+    # each TAMUK sire at <=2). M70 may still concentrate (Zack 3) — that's the
+    # desired non-over-spread of soft-only.
+    by = {b.name: b for b in roster}
+    sol = solve(roster, litters, _fixed_seed_config(config), fixed_pairs=FIXED)
+    assert sol.unbred_does == []
+    from collections import Counter
+
+    tamuk = Counter(
+        p.sire for p in sol.pairings if not p.fixed and by[p.dam].breed.startswith("TAMUK")
+    )
+    assert max(tamuk.values(), default=0) <= 2
 
 
 def test_same_strain_only(roster, litters, config) -> None:

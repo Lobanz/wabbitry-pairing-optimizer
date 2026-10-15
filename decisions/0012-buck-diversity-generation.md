@@ -40,20 +40,25 @@ for both strains.
    buck is genuinely the only good match — preserves least-bad, and has no
    unbred failure mode.
 
-Defaults are OFF so existing (least-bad) behavior is unchanged unless the
-operator opts in. Both knobs interoperate with the shuffled multi-start search:
-different per-run doe orders build load differently, so the search proposes a
-range of spread assignments for the full-solution score to rank.
+Defaults: the hard cap is OFF (`0`); the soft penalty is ON by default
+(`0.5`) — the operator's settled "soft-only" policy. Existing least-bad
+concentration is replaced by soft-driven spread by default; the cap remains
+available but OFF. Both knobs interoperate with the shuffled multi-start
+search: different per-run doe orders build load differently, so the search
+proposes a range of spread assignments for the full-solution score to rank.
 
 **Consequences**
 
 - The solver can now propose (and score) genuinely different, buck-spread
   assignments; a future quality-aware pairability mode (or a distinct-sire
   full-solution term) will have diverse solutions to rank.
-- Verified on the real roster (seed 42): baseline max load 5 on one buck;
-  `load_penalty=5.0` drops it to 2; `max_does_per_buck=2` yields
-  vader=2/xerces=2/willy=2 across TAMUK with all does assigned.
-- Hard-cap failure mode (tight pool unbred) is documented and defaulted off;
-  it is an operator choice, not a silent default.
+- Verified on the real roster (seed 42) across the four variants (base /
+  soft 0.5 / cap 2 / both): baseline max load 5 on one buck; soft drops it to
+  2 and yields the most distinct sires (6); the cap forces M70 over-spread
+  (Zack→2, Opal to her sire Uno) for no sire-diversity gain, so SOFT-ONLY is
+  the chosen policy. Genetic quality (sum r, sum_history, no full-sib, no
+  unbred) is identical across all four — the variants only differ in which
+  buck, not how related.
+- Hard-cap failure mode (tight pool unbred) is documented; the cap stays OFF.
 - TAMUK buck pool for the Oct-2026 round remains Vader/Willy/Xerces; Willy
   stays active (vigorous, Vader is his eventual replacement).

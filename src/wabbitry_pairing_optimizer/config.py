@@ -160,14 +160,14 @@ class DiversityConfig(BaseModel):
         load_penalty: Soft score reduction each buck absorbs per doe it already
             holds in the current run, so the greedy spreads naturally while a
             buck can still concentrate when it is genuinely the only good
-            match (0.0 = disabled). Preserves least-bad; no unbred failure
-            mode.
+            match. Preferred lever (default 0.5); preserves least-bad, no
+            unbred failure mode.
     """
 
     model_config = ConfigDict(frozen=True)
 
     max_does_per_buck: int = 0
-    load_penalty: float = 0.0
+    load_penalty: float = 0.5
 
 
 class OutputConfig(BaseModel):
