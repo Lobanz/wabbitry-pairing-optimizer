@@ -75,8 +75,8 @@ give the same round every time.
 
 ### Report: pairings table
 
-Each pairing shows **Buck x Doe** (title-cased), tier, **Related%** (kinship
-`r * 100`), score, and a **Warning** column:
+Each pairing shows **Buck x Doe** (title-cased), **Doe Score** (productivity
+index), **Related%** (kinship `r * 100`), score, and a **Warning** column:
 
 - `full-sibling` — true same-generation full siblings (heavy penalty, last resort)
 - `parent-offspring` — line-breeding a buck to its own offspring
@@ -94,13 +94,31 @@ Two day-batch calendars (no rest days — the operator inserts them):
   batches/day to compress the round)
 
 Both are also present in the JSON report (`schedule_capped`, `schedule_all_bucks`).
-With the current roster both run 4 days: Vader (4 does) is the single-buck floor.
+With the default soft-diversity policy the current roster runs 4 days.
+
+## Buck-diversity policy (`[diversity]` config)
+
+Pairing generation spreads does across sires so the offspring trio-maker has
+multiple distinct sire-lines to work with. Two independent levers, one policy
+across both strains, auto-assignment only (fixed pairs untouched):
+
+- **`load_penalty`** (default `0.5`) — soft, ON by default: each buck's score
+  drops by this per doe it already holds, so the greedy spreads naturally but
+  can still concentrate when a buck is the only good match (least-bad, no
+  unbred-failure mode). This is the operator's preferred lever.
+- **`max_does_per_buck`** (default `0` = off) — hard cap: a buck at the cap is
+  removed from candidates for remaining does. Blunt (can force a 2nd-best pair
+  or strand a tight pool); kept in the code but OFF unless explicitly needed.
+
+Diversity is *generated* during pairing, not only scored: a solution-level term
+alone can't fix a search that never proposes a spread assignment.
 
 ## Config
 
 `data/config.toml` holds every tunable (kinship tiers, productivity formula,
-scoring weights, optimization params incl. `min_runs`/`stall_limit`/`seed`/
-`buck_batch_capacity`, and `[output]` artifact policy). See `docs/design.md` §9.
+scoring weights, `[diversity]` buck-spread policy, optimization params incl.
+`min_runs`/`stall_limit`/`seed`/`buck_batch_capacity`, and `[output]` artifact
+policy). See `docs/design.md` §9.
 
 ## Development
 

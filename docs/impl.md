@@ -1,8 +1,11 @@
 # Implementation Plan — Wabbitry Pairing Optimizer
 
-Status: **Draft for operator review.** Gate: after review, the operator gives an
-explicit 'go' before any code is written (matches the standing design-first
-protocol).
+Status: **Implemented through Phase 6.** Phases 0-6 landed on `main` via
+per-phase issues/branches/PRs (0-5 plus Phase 6 hardening). Two post-phase
+operator changes merged 2026-10-15 (PR #22: Tier column removed from the
+report table; PR #23: `[diversity]` buck-spread policy, ADR 0012). This plan
+remains the historical record of the phased build; current behavior + config
+are documented in `README.md` and `docs/design.md`.
 
 ## ESL conformance
 

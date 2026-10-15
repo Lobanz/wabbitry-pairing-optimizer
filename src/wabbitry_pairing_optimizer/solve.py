@@ -9,8 +9,10 @@ Produces a complete breeding round from the Phase 1/2/3 building blocks:
    run shuffles the remaining does and bucks, iterates does, and assigns each
    the highest-scoring buck by the per-pairing score (r + doe_history; ties
    resolve to shuffled order). Buck load is allowed (a buck may service
-   multiple does — design rule 5). Full-sib is naturally a last resort via the
-   heavy sibling penalty.
+   multiple does — design rule 5); the ``[diversity]`` policy (hard cap +
+   soft load penalty) makes buck-spread reachable during GENERATION so the
+   multi-start search can propose diverse assignments. Full-sib is naturally
+   a last resort via the heavy sibling penalty.
 3. Each complete solution scores via the full-solution objective (Phase 3).
    Stall-based termination: stop only after MIN_RUNS and when no new winner
    has appeared in STALL_LIMIT consecutive runs. Keep the single best.
@@ -104,17 +106,56 @@ def solve(
 
 
 def _assign_one(
-    dam: str, bucks: list[str], mat: RMatrix, prod: ProdMap, roster: list[Breeder], config: Config
-) -> Pairing:
-    """Pick the highest-scoring buck for one doe (ties -> first in list order)."""
+    dam: str,
+    bucks: list[str],
+    mat: RMatrix,
+    prod: ProdMap,
+    roster: list[Breeder],
+    config: Config,
+    load: dict[str, int] | None = None,
+) -> Pairing | None:
+    """Pick the best-scoring buck for one doe under a buck-load policy.
+
+    Applies the diversity policy to AUTO assignment only (fixed pairs are
+    excluded from auto pools upstream). A buck at the hard ``max_does_per_buck``
+    cap is removed from candidacy; otherwise each buck's effective score drops
+    by ``config.diversity.load_penalty`` per doe it already holds in the
+    current run, so the greedy can spread but still concentrate when a buck is
+    the only good match. Ties resolve to first in list order.
+
+    Returns ``None`` when every candidate buck is at its hard cap (a tight-pool
+    failure the caller lets the full-solution unbred penalty rank low); the
+    caller never asserts — an unassigned doe is a lower-ranked solution, not a
+    hard error.
+
+    Args:
+        dam: Doe being assigned.
+        bucks: Candidate buck list (shuffled by the caller).
+        mat: Kinship r matrix.
+        prod: Doe productivity map.
+        roster: Full validated roster.
+        config: Full typed config (read ``diversity``).
+        load: Current per-buck doe counts in this run (mutable, updated by the
+            caller after assignment).
+
+    Returns:
+        The chosen ``Pairing``, or ``None`` if every buck is at the hard cap.
+    """
+    load = load or {}
+    cap = config.diversity.max_does_per_buck
+    penalty = config.diversity.load_penalty
     best: Pairing | None = None
+    best_scaled: float | None = None
     for sire in bucks:
+        if cap and load.get(sire, 0) >= cap:
+            continue
         rv = mat[(sire, dam) if sire < dam else (dam, sire)]
         tier = tier_for_pair(sire, dam, roster, rv, config.kinship)
         p = per_pairing_score(sire, dam, rv, prod.get(dam, 0.0), tier, config.scoring)
-        if best is None or p.final_score > best.final_score:
+        scaled = p.final_score - penalty * load.get(sire, 0)
+        if best_scaled is None or scaled > best_scaled:
             best = p
-    assert best is not None, f"no buck available for doe {dam!r}"  # noqa: S101 - internal invariant
+            best_scaled = scaled
     return best
 
 
@@ -143,12 +184,16 @@ def _multi_start(
         rng.shuffle(buck_order)
 
         pairs: list[Pairing] = []
+        load: dict[str, int] = {}
         for d in order:
-            p = _assign_one(d, buck_order, mat, prod, roster, config)
+            p = _assign_one(d, buck_order, mat, prod, roster, config, load)
+            if p is None:
+                continue  # every buck at hard cap for this doe; leaves it unbred
+            load[p.sire] = load.get(p.sire, 0) + 1
             pairs.append(p)
 
         # Full-solution score ranks the complete assignment set.
-        assigned = {p.dam for p in pairs if p is not None}
+        assigned = {p.dam for p in pairs}
         unbred = [d for d in doess if d not in assigned]
         final = full_solution_score(
             [p for p in pairs if p is not None], prod, unbred, 0, 0, config.scoring

@@ -144,6 +144,32 @@ class OptimizationConfig(BaseModel):
     buck_batch_capacity: int = 4
 
 
+class DiversityConfig(BaseModel):
+    """Buck-diversity levers during auto pairing generation (design §6).
+
+    Both knobs are INDEPENDENT levers that make spread reachable by the search
+    (per operator 2026-10-15: diversity must be GENERATED, not only scored).
+    They apply per-run, per-strain, to auto assignment only (fixed pairs are
+    excluded from auto pools already). ``0`` / ``0.0`` disables each knob.
+
+    Attributes:
+        max_does_per_buck: Hard cap on how many does one buck may service in a
+            round's auto assignment; a buck at the cap is removed from the
+            candidate list for remaining does (0 = disabled). Blunt: can force
+            a doe onto her 2nd-best buck, or leave a tight pool unbred.
+        load_penalty: Soft score reduction each buck absorbs per doe it already
+            holds in the current run, so the greedy spreads naturally while a
+            buck can still concentrate when it is genuinely the only good
+            match. Preferred lever (default 0.5); preserves least-bad, no
+            unbred failure mode.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    max_does_per_buck: int = 0
+    load_penalty: float = 0.5
+
+
 class OutputConfig(BaseModel):
     """Result-artifact settings (design §8).
 
@@ -205,6 +231,7 @@ class Config(BaseModel):
     scoring: ScoringConfig = Field(default_factory=lambda: ScoringConfig())
     pairability: PairabilityConfig = Field(default_factory=PairabilityConfig)
     optimization: OptimizationConfig = Field(default_factory=OptimizationConfig)
+    diversity: DiversityConfig = Field(default_factory=DiversityConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
 
 
@@ -242,6 +269,7 @@ def load_config(path: str | Path) -> Config:
 __all__ = [
     "Config",
     "ConfigError",
+    "DiversityConfig",
     "FullSolutionConfig",
     "KinshipConfig",
     "OptimizationConfig",

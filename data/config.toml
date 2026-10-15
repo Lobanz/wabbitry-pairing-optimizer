@@ -63,6 +63,21 @@ seed = 0
 # Concurrent bucks the operator can manage at once (batching for calendar).
 buck_batch_capacity = 4
 
+[diversity]
+# Buck-diversity levers during AUTO pairing generation (operator 2026-10-15:
+# diversity must be GENERATED, not only scored; soft-only is the preferred
+# policy — the hard cap over-spreads M70 for no diversity gain and can strand
+# a doe in a tight pool, so it stays OFF unless explicitly needed).
+# Applies per-run, per-strain, to auto assignment only (fixed pairs already
+# excluded from auto pools). Both strains share one policy.
+# Hard cap: a buck at this many does is removed from candidates for remaining
+# does (blunt - can force a 2nd-best pair or leave a tight pool unbred).
+max_does_per_buck = 0
+# Soft penalty: each buck's effective per-pair score drops by this much per
+# doe it already holds in the current run (spreads naturally, preserves
+# least-bad, no unbred failure mode). DEFAULT 0.5 = preferred lever.
+load_penalty = 0.5
+
 [output]
 # Default output directory for result artifacts (--output-dir overrides).
 output_dir = "out"
