@@ -98,7 +98,12 @@ def test_markdown_report_content(roster, litters, config) -> None:
     assert "full-solution score" in md.lower()
     assert "**final**" in md
     # Pairings rendered as a table with the expected column header.
-    assert "| Buck | Doe | Tier | Related | Score | Warning |" in md
+    assert "| Buck | Doe | Doe History | Tier | Related | Score | Warning |" in md
+    # Doe History column shows the productivity index for a paired doe.
+    opal_hist = report.doe_productivity.get("opal")
+    if opal_hist is not None:
+        assert "| Opal | " in md
+        assert f" {opal_hist:.2f} " in md
     # Names are title-cased at render: first letter upper.
     assert "Zack" in md
     assert "Abby" in md
