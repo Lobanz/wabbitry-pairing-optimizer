@@ -11,6 +11,7 @@ from wabbitry_pairing_optimizer.config import load_config
 from wabbitry_pairing_optimizer.load_breeders import load_breeders
 from wabbitry_pairing_optimizer.load_litters import load_litters
 from wabbitry_pairing_optimizer.logging import get_logger, setup_logging
+from wabbitry_pairing_optimizer.models import Pairing
 from wabbitry_pairing_optimizer.render import build_report, write_artifacts
 from wabbitry_pairing_optimizer.solve import solve
 
@@ -89,16 +90,69 @@ def test_json_report_content(roster, litters, config) -> None:
 
 
 def test_markdown_report_content(roster, litters, config) -> None:
-    """The markdown report lists pairings and the score table."""
+    """The markdown report lists pairings as a table with buck/doe/tier/r/score/warning."""
     sol, report, mat, prod = _solve_and_report(roster, litters, config)
     write_artifacts(str(TMP), report, 42, mat, prod, config.output)
     md = (TMP / config.output.report_md).read_text(encoding="utf-8")
     assert "Wascally Wabbitry" in md
     assert "full-solution score" in md.lower()
     assert "**final**" in md
-    # Every dam appears in the pairings list.
+    # Pairings rendered as a table with the expected column header.
+    assert "| Buck | Doe | Tier | Related | Score | Warning |" in md
+    # Names are title-cased at render: first letter upper.
+    assert "Zack" in md
+    assert "Abby" in md
+    # Related column shows a percentage (r * 100).
+    assert "0%" in md  # outcross pairs show 0% related
+    assert "%" in md
+    # Every doe (title-cased) appears in the pairings.
     for p in sol.pairings:
-        assert p.dam in md
+        assert p.dam[0].upper() + p.dam[1:] in md
+
+
+def test_markdown_warning_column(roster, litters, config) -> None:
+    """Warning column surfaces heavy buck loads; parent-offspring flagged."""
+    from wabbitry_pairing_optimizer.render import _pairing_warnings
+
+    sol, report, mat, prod = _solve_and_report(roster, litters, config)
+    write_artifacts(str(TMP), report, 42, mat, prod, config.output)
+    md = (TMP / config.output.report_md).read_text(encoding="utf-8")
+    # A heavy buck load (one buck -> 3 does) surfaces as a warning in the table.
+    assert "does on one buck" in md
+
+    # Direct unit check: a real parent-offspring pair (opal <- uno) is flagged.
+    synthetic = Pairing(
+        sire="uno",
+        dam="opal",
+        pair_type="line_bred",
+        kinship_r=0.4375,
+        tier_penalty=1.0,
+        score_r=-0.4375,
+        score_doe_history=4.8,
+        final_score=3.36,
+    )
+    warns = _pairing_warnings(synthetic, sol, roster)
+    assert "parent-offspring" in warns
+    # Fixed pairs are never warned (operator-deliberate).
+    yaz_pair = next(p for p in sol.pairings if p.fixed)
+    assert _pairing_warnings(yaz_pair, sol, roster) == []
+
+
+def test_markdown_schedule_tables(roster, litters, config) -> None:
+    """The report shows BOTH day-batch calendars: capped and all-bucks/day."""
+    sol, report, mat, prod = _solve_and_report(roster, litters, config)
+    write_artifacts(str(TMP), report, 42, mat, prod, config.output, max_bucks_per_day=2)
+    md = (TMP / config.output.report_md).read_text(encoding="utf-8")
+    assert "Schedule — capped at" in md
+    assert "Schedule — all bucks/day" in md
+    assert "| Day | Breedings (Buck x Doe) |" in md
+    # Every pairing's buck x doe shows up in the schedule table (title-cased).
+    for p in sol.pairings:
+        label = f"{p.sire[0].upper() + p.sire[1:]} x {p.dam[0].upper() + p.dam[1:]}"
+        assert label in md
+    # The all-bucks schedule is shorter than or equal to the capped one.
+    all_rows = [ln for ln in md.splitlines() if ln.startswith("| Day")]
+    assert all_rows
 
 
 def test_csv_tables(roster, litters, config) -> None:

@@ -26,6 +26,7 @@ from wabbitry_pairing_optimizer.models import (
     PairingReport,
     Solution,
 )
+from wabbitry_pairing_optimizer.schedule import build_schedule
 
 __all__ = ["build_report", "write_artifacts"]
 
@@ -67,6 +68,7 @@ def write_artifacts(
     kinship_matrix: dict[tuple[str, str], float],
     doe_productivity: dict[str, float],
     out_cfg: OutputConfig,
+    max_bucks_per_day: int = 4,
 ) -> list[str]:
     """Write all result artifacts to ``output_dir`` (created if missing).
 
@@ -77,6 +79,7 @@ def write_artifacts(
         kinship_matrix: r matrix (canonical sorted pair -> r).
         doe_productivity: doe name -> index.
         out_cfg: The `[output]` config (filename policy).
+        max_bucks_per_day: Buck cap for the capped schedule table (>=1).
 
     Returns:
         Absolute paths of the files written.
@@ -88,10 +91,20 @@ def write_artifacts(
 
     # Structured JSON (agent-consumable): seed + config-relevant + report.
     json_path = d / out_cfg.report_json
+
+    def _calendar(mode: int) -> dict[str, list[str]]:
+        return {
+            f"Day {day}": [f"{p.sire} x {p.dam}" for p in pairs]
+            for day, pairs in sorted(build_schedule(report.solution.pairings, mode).items())
+        }
+
     json_doc = {
         "seed": seed,
         "seedless": seed == 0,
         "schedule_days": report.solution.schedule_days,
+        "schedule_capped_at": max_bucks_per_day,
+        "schedule_capped": _calendar(max_bucks_per_day),
+        "schedule_all_bucks": _calendar(0),
         "pairability_count": report.solution.pairability_count,
         "score": report.solution.score.model_dump(),
         "pairings": [p.model_dump() for p in report.solution.pairings],
@@ -104,7 +117,7 @@ def write_artifacts(
 
     # Human markdown report.
     md_path = d / out_cfg.report_md
-    md_path.write_text(_render_markdown(report, seed), encoding="utf-8")
+    md_path.write_text(_render_markdown(report, seed, max_bucks_per_day), encoding="utf-8")
     written.append(str(md_path))
 
     # Kinship matrix CSV.
@@ -140,14 +153,65 @@ def _pretty(obj: object) -> str:
     return json.dumps(obj, indent=2, default=str)
 
 
-def _render_markdown(report: PairingReport, seed: int) -> str:
+def _title(name: str) -> str:
+    """Title-case a name for display (lowercase-name rule, ADR 0002)."""
+    return name[0].upper() + name[1:] if name else name
+
+
+def _pairing_warnings(
+    pairing: Pairing,
+    solution: Solution,
+    roster: list[Breeder],
+) -> list[str]:
+    """Human-read flags for a pairing (the report's Warning column).
+
+    Highlights issues an operator should eyeball:
+    - relationship issues the tier-1/k2 scoring already separates;
+    - heavy buck load (one buck servicing many does in a round).
+
+    Warning thresholds are heuristic; fixed (operator-decided) pairs are
+    intentionally unflagged (they are deliberate).
+    """
+    from wabbitry_pairing_optimizer.kinship import relationship_kind
+
+    warns: list[str] = []
+    if pairing.fixed:
+        return warns  # operator-deliberate; not a warning
+
+    kind = relationship_kind(pairing.sire, pairing.dam, roster)
+    if pairing.pair_type == "sibling":
+        warns.append("full-sibling")
+    elif kind == "parent_offspring":
+        warns.append("parent-offspring")
+    # Heavy buck load: one buck servicing >2 does in the same round.
+    load = sum(1 for p in solution.pairings if p.sire == pairing.sire)
+    if load > 2:
+        warns.append(f"{load} does on one buck")
+    return warns
+
+
+def _schedule_table(sched: dict[int, list[Pairing]]) -> list[str]:
+    """Render a day-by-day calendar as a markdown table (day -> Buck x Doe)."""
+    lines: list[str] = []
+    lines.append("| Day | Breedings (Buck x Doe) |")
+    lines.append("|-|-|")
+    if not sched:
+        lines.append("| — | — |")
+        return lines
+    for day in sorted(sched):
+        pairs = sched[day]
+        cell = ", ".join(f"{_title(p.sire)} x {_title(p.dam)}" for p in pairs)
+        lines.append(f"| Day {day} | {cell} |")
+    return lines
+
+
+def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -> str:
     sol = report.solution
     sc = sol.score
     lines: list[str] = []
     lines.append("# Wascally Wabbitry — breeding round report")
     lines.append("")
     lines.append(f"- **Seed**: {seed} ({'seedless/random' if seed == 0 else 'deterministic'})")
-    lines.append(f"- **Schedule**: {sol.schedule_days} days")
     lines.append(f"- **Pairability**: {sol.pairability_count}")
     lines.append(f"- **Unbred does**: {', '.join(sol.unbred_does) or 'none'}")
     lines.append("")
@@ -163,11 +227,30 @@ def _render_markdown(report: PairingReport, seed: int) -> str:
     lines.append("")
     lines.append("## Pairings")
     lines.append("")
-    for p in sorted(sol.pairings, key=lambda x: (x.dam, x.sire)):
-        tag = " *(fixed)*" if p.fixed else ""
+    rows = sorted(sol.pairings, key=lambda x: (x.dam, x.sire))
+    lines.append("| Buck | Doe | Tier | Related | Score | Warning |")
+    lines.append("|-|-|-|-|-|-|")
+    for p in rows:
+        warns = _pairing_warnings(p, sol, report.breeders)
+        fixed_mark = " *(fixed)*" if p.fixed else ""
+        warn_text = ", ".join(warns) if warns else "—"
         lines.append(
-            f"- **{p.dam}** ← **{p.sire}** — {p.pair_type}, r={p.kinship_r:.3f}, "
-            f"score {p.final_score:+.3f}{tag}"
+            f"| {_title(p.sire)} | {_title(p.dam)}{fixed_mark} | {p.pair_type} "
+            f"| {p.kinship_r * 100:.0f}% | {p.final_score:+.3f} | {warn_text} |"
         )
+    lines.append("")
+    lines.append("## Schedule — capped at N bucks/day")
+    lines.append("")
+    lines.append(f"At most **{max_bucks_per_day}** bucks breed per day (spread round).")
+    lines.append("")
+    capped = build_schedule(sol.pairings, max_bucks_per_day)
+    lines.extend(_schedule_table(capped))
+    lines.append("")
+    lines.append("## Schedule — all bucks/day")
+    lines.append("")
+    lines.append("Every eligible buck breeds each day (fewer days; run 2 batches/day if needed).")
+    lines.append("")
+    all_bucks = build_schedule(sol.pairings, 0)
+    lines.extend(_schedule_table(all_bucks))
     lines.append("")
     return "\n".join(lines) + "\n"

@@ -112,6 +112,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         from wabbitry_pairing_optimizer.logging import get_logger, setup_logging
         from wabbitry_pairing_optimizer.render import build_report, write_artifacts
+        from wabbitry_pairing_optimizer.schedule import build_schedule
         from wabbitry_pairing_optimizer.solve import solve
 
         cfg = load_config(getattr(pre, "config", "data/config.toml"))
@@ -142,7 +143,23 @@ def main(argv: list[str] | None = None) -> int:
         prod = doe_production_scores(breeders, litters, cfg.productivity)
         fixed_pairings = [p for p in solution.pairings if p.fixed]
         report = build_report(solution, breeders, fixed_pairings, mat, prod)
-        written = write_artifacts(output_dir, report, cfg.optimization.seed, mat, prod, cfg.output)
+        max_bucks = cfg.optimization.buck_batch_capacity
+        written = write_artifacts(
+            output_dir,
+            report,
+            cfg.optimization.seed,
+            mat,
+            prod,
+            cfg.output,
+            max_bucks_per_day=max_bucks,
+        )
+
+        # Day-batch calendars (both modes) for the JSON consumer.
+        def _cal(mode: int) -> dict[str, list[str]]:
+            return {
+                f"Day {d}": [f"{p.sire} x {p.dam}" for p in ps]
+                for d, ps in sorted(build_schedule(solution.pairings, mode).items())
+            }
 
         _emit(
             emission,
@@ -156,6 +173,9 @@ def main(argv: list[str] | None = None) -> int:
                 "unbred_does": solution.unbred_does,
                 "final_score": solution.score.final,
                 "n_pairings": len(solution.pairings),
+                "schedule_capped_at": max_bucks,
+                "schedule_capped": _cal(max_bucks),
+                "schedule_all_bucks": _cal(0),
             }
             if emission == "json"
             else (
