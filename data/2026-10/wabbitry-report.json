@@ -6,47 +6,47 @@
   "schedule_capped": {
     "Day 1": [
       "uno x maxine",
-      "vader x ginseng",
-      "willy x isabelle",
+      "vader x iris",
+      "willy x harmony",
       "xerces x fiona"
     ],
     "Day 2": [
-      "vader x harmony",
-      "yaz x betty",
-      "zack x abby"
+      "vader x jade",
+      "willy x isabelle",
+      "xerces x ginseng",
+      "yaz x betty"
     ],
     "Day 3": [
-      "vader x iris",
       "yaz x kiki",
-      "zack x amber"
+      "zack x abby"
     ],
     "Day 4": [
-      "vader x jade",
       "yaz x lily",
+      "zack x amber"
+    ],
+    "Day 5": [
       "zack x opal"
     ]
   },
   "schedule_all_bucks": {
     "Day 1": [
       "uno x maxine",
-      "vader x ginseng",
-      "willy x isabelle",
+      "vader x iris",
+      "willy x harmony",
       "xerces x fiona",
       "yaz x betty",
       "zack x abby"
     ],
     "Day 2": [
-      "vader x harmony",
+      "vader x jade",
+      "willy x isabelle",
+      "xerces x ginseng",
       "yaz x kiki",
       "zack x amber"
     ],
     "Day 3": [
-      "vader x iris",
       "yaz x lily",
       "zack x opal"
-    ],
-    "Day 4": [
-      "vader x jade"
     ]
   },
   "pairability_count": 6,
@@ -160,7 +160,7 @@
       "fixed": false
     },
     {
-      "sire": "vader",
+      "sire": "willy",
       "dam": "harmony",
       "pair_type": "outcross",
       "kinship_r": 0.0,
@@ -182,7 +182,7 @@
       "fixed": false
     },
     {
-      "sire": "vader",
+      "sire": "xerces",
       "dam": "ginseng",
       "pair_type": "outcross",
       "kinship_r": 0.0,
