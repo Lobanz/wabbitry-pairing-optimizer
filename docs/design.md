@@ -4,7 +4,8 @@ Status: **Design decisions resolved (2026-10-15).** All open questions in §10
 are closed; kinship uses the r-coefficient + founder-sister factor (ADR 0003);
 the Yaz strategy is locked to betty/lily/kiki (ADR 0001); names are lowercase
 (ADR 0002); scoring uses two tiers with all policy knobs in a TOML config;
-assignment is fixed-pairs + multi-start ranked greedy. **Next gate: the
+assignment is fixed-pairs + multi-start ranked greedy; buck-diversity is
+generated during pairing via a `[diversity]` config (ADR 0012). **Next gate: the
 implementation plan must be reviewed and an explicit operator 'go' received
 before any code is written.** Module layout is one-concern-per-file with a
 dependency DAG (see §11).
@@ -364,6 +365,26 @@ Per strain pool (M70, TAMUK), independent:
      runs are lucky; after min-runs, the stall gate auto-adapts (fast when
      converged, still escapes local optima via the occasional late winner).
    - Keep the single best solution (the current winner).
+   - **Buck-diversity levers (2026-10-15, operator-driven):** the multi-start
+     greedy, doe-by-doe with no memory of prior load, concentrates does on
+     whichever buck is outcross to the most of them (e.g. Vader taking 4 of 6
+     TAMUK does). The ``[diversity]`` config makes SPREAD reachable by the
+     search during GENERATION — not just scored afterward (a solution-level
+     diversity term alone can only rank whatever assignments the search
+     produced; if every run concentrates, it never sees a spread candidate).
+     Two independent knobs, one shared policy across both strains:
+     - ``max_does_per_buck`` (int, 0=off) — hard cap; a buck at the cap is
+       removed from the candidate list for remaining does. Blunt: can force a
+       doe onto her 2nd-best buck, and a tight pool (does > bucks × cap) can
+       leave does unbred (ranked low by the unbred penalty, never asserted).
+     - ``load_penalty`` (float, 0=off) — soft; a buck's effective per-pairing
+       score drops by this amount per doe it already holds in the current run.
+       Spreads naturally while still letting a buck concentrate when it is the
+       only good match (preserves least-bad; no unbred failure mode).
+     Both apply per-run, per-strain, to AUTO assignment only (fixed pairs are
+     excluded from auto pools upstream). Because doe order is shuffled each
+     run, the knobs interact with the multi-start search as intended, and the
+     full-solution score then ranks genuinely different (spread) candidates.
 4. **Doe production history** is the primary tiebreaker when r ties: rank does
    by their own (or mother's, where own is thin) litter history via the doe
    productivity index (size + consistency, outliers trimmed, blended with
@@ -571,6 +592,10 @@ min_runs = 500               # minimum runs before stall-termination can fire
 stall_limit = 100            # stop after this many runs with no new winner
 seed = 0                     # fixed seed for reproducibility (0 = random/unset)
 buck_batch_capacity = 4      # concurrent bucks operated at once (batching)
+
+[diversity]
+max_does_per_buck = 0        # hard cap: a buck takes <= N does (0 = off); one policy, both strains
+load_penalty = 0.0           # soft: score drops by this per doe a buck already holds (0 = off)
 
 [output]
 output_dir = "out"           # default destination dir for result artifacts
