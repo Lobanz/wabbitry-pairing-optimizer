@@ -1,0 +1,4 @@
+# Working output directory (gitignored, kept for the working tree).
+# Official per-round results are committed to data/<YYYY-MM-DD>/ instead.
+# Regenerate here with:
+#   python -m wabbitry_pairing_optimizer --pairs data/fixed_pairs.json --seed 42

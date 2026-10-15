@@ -10,5 +10,6 @@ build/
 .ruff_cache/
 .coverage
 htmlcov/
-out/
+out/*
+!out/.gitkeep
 tests/_render_tmp/
