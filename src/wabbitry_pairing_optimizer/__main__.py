@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         from wabbitry_pairing_optimizer.logging import get_logger, setup_logging
         from wabbitry_pairing_optimizer.render import build_report, write_artifacts
-        from wabbitry_pairing_optimizer.schedule import build_schedule
+        from wabbitry_pairing_optimizer.schedule import build_schedule, schedule_rng
         from wabbitry_pairing_optimizer.solve import solve
 
         cfg = load_config(getattr(pre, "config", "data/config.toml"))
@@ -167,7 +167,11 @@ def main(argv: list[str] | None = None) -> int:
         def _cal(mode: int) -> dict[str, list[str]]:
             return {
                 f"Day {d}": [f"{p.sire} x {p.dam}" for p in ps]
-                for d, ps in sorted(build_schedule(solution.pairings, mode).items())
+                for d, ps in sorted(
+                    build_schedule(
+                        solution.pairings, mode, rng=schedule_rng(cfg.optimization.seed)
+                    ).items()
+                )
             }
 
         _emit(
