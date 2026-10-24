@@ -97,14 +97,31 @@ def test_markdown_report_content(roster, litters, config) -> None:
     assert "Wascally Wabbitry" in md
     assert "full-solution score" in md.lower()
     assert "**final**" in md
-    # Pairings rendered as a table with the expected column header (no Tier column).
-    assert "| Buck | Doe | Doe Score | Related | Pair Score | Warning |" in md
+    # Pairings rendered as a doe-first table with the spanning Name·Breed header
+    # (no Tier column).
+    assert (
+        "| **Doe**<br>Name · Breed | **Buck**<br>Name · Breed | "
+        "Doe Score | Related | Pair Score | Warning |" in md
+    )
     assert "| Tier |" not in md
     # Doe Score column shows the productivity index for a paired doe.
     opal_hist = report.doe_productivity.get("opal")
     if opal_hist is not None:
-        assert "| Opal | " in md
+        assert "**Opal** · " in md
         assert f" {opal_hist:.2f} " in md
+    # Breed labels come from the roster's full breed field (strain pools shown).
+    assert "M70 NZW" in md
+    assert "TAMUK NZW" in md
+    # Doe-first: in every pairings row the doe cell precedes the buck cell.
+    for p in sol.pairings:
+        doe_t = p.dam[0].upper() + p.dam[1:]
+        buck_t = p.sire[0].upper() + p.sire[1:]
+        row = next(
+            ln
+            for ln in md.splitlines()
+            if ln.startswith("| **") and f"**{doe_t}**" in ln and f"**{buck_t}**" in ln
+        )
+        assert row.index(f"**{doe_t}**") < row.index(f"**{buck_t}**")
     # Names are title-cased at render: first letter upper.
     assert "Zack" in md
     assert "Abby" in md

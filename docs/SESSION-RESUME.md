@@ -34,10 +34,11 @@ dual-format report (json + markdown) + CSVs + run log to `--output-dir`
 
 `python -m wabbitry_pairing_optimizer --pairs data/fixed_pairs.json --seed 42`
 writes to `out/`:
-- `wabbitry-report.md` / `wabbitry-report.json` — pairings as a table
-  (Buck/Doe/Doe Score/**Related%**/Pair Score/**Warning**), full-solution
-  score, and **two schedule tables** (capped at N bucks/day and all-bucks/day;
-  no rest days — operator inserts them).
+- `wabbitry-report.md` / `wabbitry-report.json` — pairings as a doe-first
+  table (**Doe**<br>Name · Breed / **Buck**<br>Name · Breed, plus Doe Score /
+  **Related%** / Pair Score / **Warning**), full-solution score, and **two
+  schedule tables** (capped at N bucks/day and all-bucks/day; schedule stays
+  Buck x Doe, no rest days — operator inserts them).
 - `kinship-table.csv`, `doe-productivity.csv`, `wabbitry-run.log` (file logging
   in the output dir, not stdout).
 

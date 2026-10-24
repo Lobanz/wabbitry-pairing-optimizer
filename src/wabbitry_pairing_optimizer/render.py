@@ -228,7 +228,15 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
     lines.append("## Pairings")
     lines.append("")
     rows = sorted(sol.pairings, key=lambda x: (x.dam, x.sire))
-    lines.append("| Buck | Doe | Doe Score | Related | Pair Score | Warning |")
+    breed = {b.name: b.breed for b in report.breeders}
+    # Doe-first (matches the operator's litter-card reading), each animal with
+    # its full breed label beside the bold name. Markdown tables have no real
+    # colspan, so the Doe/Buck spanning header reads as "Name · Breed" (ADR:
+    # display-only, JSON report keeps raw values).
+    lines.append(
+        "| **Doe**<br>Name · Breed | **Buck**<br>Name · Breed | "
+        "Doe Score | Related | Pair Score | Warning |"
+    )
     lines.append("|-|-|-|-|-|-|")
     for p in rows:
         warns = _pairing_warnings(p, sol, report.breeders)
@@ -236,8 +244,10 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
         warn_text = ", ".join(warns) if warns else "—"
         hist = report.doe_productivity.get(p.dam)
         hist_text = f"{hist:.2f}" if hist is not None else "—"
+        doe_cell = f"**{_title(p.dam)}**{fixed_mark} · {breed[p.dam]}"
+        buck_cell = f"**{_title(p.sire)}** · {breed[p.sire]}"
         lines.append(
-            f"| {_title(p.sire)} | {_title(p.dam)}{fixed_mark} | {hist_text} "
+            f"| {doe_cell} | {buck_cell} | {hist_text} "
             f"| {p.kinship_r * 100:.0f}% | {p.final_score:+.3f} | {warn_text} |"
         )
     lines.append("")
