@@ -26,7 +26,7 @@ from wabbitry_pairing_optimizer.models import (
     PairingReport,
     Solution,
 )
-from wabbitry_pairing_optimizer.schedule import build_schedule
+from wabbitry_pairing_optimizer.schedule import build_schedule, schedule_rng
 
 __all__ = ["build_report", "write_artifacts"]
 
@@ -95,7 +95,9 @@ def write_artifacts(
     def _calendar(mode: int) -> dict[str, list[str]]:
         return {
             f"Day {day}": [f"{p.sire} x {p.dam}" for p in pairs]
-            for day, pairs in sorted(build_schedule(report.solution.pairings, mode).items())
+            for day, pairs in sorted(
+                build_schedule(report.solution.pairings, mode, rng=schedule_rng(seed)).items()
+            )
         }
 
     json_doc = {
@@ -255,14 +257,14 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
     lines.append("")
     lines.append(f"At most **{max_bucks_per_day}** bucks breed per day (spread round).")
     lines.append("")
-    capped = build_schedule(sol.pairings, max_bucks_per_day)
+    capped = build_schedule(sol.pairings, max_bucks_per_day, rng=schedule_rng(seed))
     lines.extend(_schedule_table(capped))
     lines.append("")
     lines.append("## Schedule — all bucks/day")
     lines.append("")
     lines.append("Every eligible buck breeds each day (fewer days; run 2 batches/day if needed).")
     lines.append("")
-    all_bucks = build_schedule(sol.pairings, 0)
+    all_bucks = build_schedule(sol.pairings, 0, rng=schedule_rng(seed))
     lines.extend(_schedule_table(all_bucks))
     lines.append("")
     return "\n".join(lines) + "\n"

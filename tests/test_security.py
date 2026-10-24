@@ -48,7 +48,7 @@ def test_empty_pairings_edge() -> None:
 
 
 def test_single_buck_all_does() -> None:
-    """One buck servicing every doe breeds one doe per day, consecutive days."""
+    """One buck servicing every doe breeds every OTHER day (alternation)."""
     from wabbitry_pairing_optimizer.models import Pairing
 
     pairs = [
@@ -65,7 +65,7 @@ def test_single_buck_all_does() -> None:
         for i in range(5)
     ]
     sched = build_schedule(pairs, 2)
-    assert sorted(sched) == [1, 2, 3, 4, 5]  # 5 does, one per day
+    assert sorted(sched) == [1, 3, 5, 7, 9]  # 5 does, one every other day
     for _d, ps in sched.items():
         assert all(p.sire == "yaz" for p in ps)
         assert len(ps) == 1
