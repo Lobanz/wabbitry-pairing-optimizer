@@ -30,12 +30,36 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
+from dataclasses import dataclass
 
 from wabbitry_pairing_optimizer.config import ProductivityConfig
 from wabbitry_pairing_optimizer.load_litters import Litter
 from wabbitry_pairing_optimizer.models import Breeder
 
-__all__ = ["productivity_index", "doe_production_scores"]
+__all__ = [
+    "ProductivityDetail",
+    "doe_production_scores",
+    "productivity_detail",
+    "productivity_index",
+]
+
+
+@dataclass(frozen=True)
+class ProductivityDetail:
+    """Full productivity breakdown for one doe (query payload, issue #28).
+
+    Exposes the components behind the index — trimmed-avg size, consistency,
+    own-vs-dam evidence blend — without changing the index contract used by
+    the solver and report.
+    """
+
+    index: float
+    own_litter_count: int
+    own_score: float
+    trimmed_avg_size: float
+    consistency: float
+    w_own: float
+    dam_index: float | None
 
 
 def _trimmed_mean(sizes: list[float], cfg: ProductivityConfig) -> float:
@@ -83,6 +107,75 @@ def _own_score(sizes: list[float], cfg: ProductivityConfig) -> float:
     return cfg.size_weight * mean + cfg.consistency_weight * consistency
 
 
+def _by_dam(litters: list[Litter]) -> defaultdict[str, list[Litter]]:
+    """Group litters by dam name (shared by index + detail)."""
+    by_dam: defaultdict[str, list[Litter]] = defaultdict(list)
+    for lit in litters:
+        by_dam[lit.dam].append(lit)
+    return by_dam
+
+
+def _index_parts(
+    doe: Breeder,
+    by_dam: defaultdict[str, list[Litter]],
+    cfg: ProductivityConfig,
+) -> tuple[float, int, float, float, float, float, float | None]:
+    """Compute (index, own_n, own_score, trimmed_avg, consistency, w_own, dam_index)."""
+    own_sizes = [float(lit.size) for lit in by_dam.get(doe.name, [])]
+    own_n = len(own_sizes)
+    if own_n:
+        trimmed = _trimmed_mean(own_sizes, cfg)
+        var = sum((x - trimmed) ** 2 for x in own_sizes) / max(own_n - 1, 1)
+        consistency = 1.0 / (1.0 + var)
+        own_score = cfg.size_weight * trimmed + cfg.consistency_weight * consistency
+    else:
+        trimmed = 0.0
+        consistency = 0.0
+        own_score = 0.0
+
+    # Determine the dam's index (mother's own score) if she has any history.
+    mother_index: float | None = None
+    if doe.dam is not None:
+        mother_sizes = [float(lit.size) for lit in by_dam.get(doe.dam, [])]
+        if mother_sizes:  # mother has production history
+            mother_index = _own_score(mother_sizes, cfg)
+
+    if mother_index is None:
+        return own_score, own_n, own_score, trimmed, consistency, 1.0, None
+
+    w_own = own_n / (own_n + cfg.evidence_k)
+    index = w_own * own_score + (1.0 - w_own) * mother_index
+    return index, own_n, own_score, trimmed, consistency, w_own, mother_index
+
+
+def productivity_detail(
+    doe: Breeder, litters: list[Litter], roster: list[Breeder], cfg: ProductivityConfig
+) -> ProductivityDetail:
+    """Full productivity breakdown for one doe (query payload, issue #28).
+
+    Args:
+        doe: The doe to score.
+        litters: All litter records.
+        roster: Full roster (to look up the dam by name).
+        cfg: Productivity config.
+
+    Returns:
+        A ``ProductivityDetail`` with the index plus its components.
+    """
+    index, own_n, own_score, trimmed, consistency, w_own, dam_index = _index_parts(
+        doe, _by_dam(litters), cfg
+    )
+    return ProductivityDetail(
+        index=index,
+        own_litter_count=own_n,
+        own_score=own_score,
+        trimmed_avg_size=trimmed,
+        consistency=consistency,
+        w_own=w_own,
+        dam_index=dam_index,
+    )
+
+
 def productivity_index(
     doe: Breeder, litters: list[Litter], roster: list[Breeder], cfg: ProductivityConfig
 ) -> float:
@@ -97,26 +190,8 @@ def productivity_index(
     Returns:
         The productivity index (>= 0). Higher = more reliable producer.
     """
-    by_dam: defaultdict[str, list[Litter]] = defaultdict(list)
-    for lit in litters:
-        by_dam[lit.dam].append(lit)
-
-    own_sizes = [float(lit.size) for lit in by_dam.get(doe.name, [])]
-    own_n = len(own_sizes)
-    own_score = _own_score(own_sizes, cfg)
-
-    # Determine the dam's index (mother's own score) if she has any history.
-    mother_index: float | None = None
-    if doe.dam is not None:
-        mother_sizes = [float(lit.size) for lit in by_dam.get(doe.dam, [])]
-        if mother_sizes:  # mother has production history
-            mother_index = _own_score(mother_sizes, cfg)
-
-    if mother_index is None:
-        return own_score
-
-    w_own = own_n / (own_n + cfg.evidence_k)
-    return w_own * own_score + (1.0 - w_own) * mother_index
+    parts = _index_parts(doe, _by_dam(litters), cfg)
+    return parts[0]
 
 
 def doe_production_scores(
