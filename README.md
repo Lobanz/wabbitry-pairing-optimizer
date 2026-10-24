@@ -75,8 +75,10 @@ give the same round every time.
 
 ### Report: pairings table
 
-Each pairing shows **Buck x Doe** (title-cased), **Doe Score** (productivity
-index), **Related%** (kinship `r * 100`), score, and a **Warning** column:
+Each pairing reads **Doe first, then Buck** (alphabetical by doe), each animal
+shown with its bold name and full breed label — e.g. **Abby** · M70 NZW —
+plus **Doe Score** (productivity index), **Related%** (kinship `r * 100`), the
+pair score, and a **Warning** column:
 
 - `full-sibling` — true same-generation full siblings (heavy penalty, last resort)
 - `parent-offspring` — line-breeding a buck to its own offspring
