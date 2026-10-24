@@ -38,6 +38,12 @@ __all__ = ["solve"]
 
 #: kinship matrix keyed by canonical (sorted) pair -> r.
 RMatrix = dict[tuple[str, str], float]
+
+# Hard safety bound on multi-start runs — a crash-safety FUSE, NOT a tuning
+# knob. Deliberately NOT in config.toml: config-driving it would let someone
+# tune their way into a hang on pathological input. Only the search-stall
+# parameters (min_runs / stall_limit) are operator-configurable.
+HARD_RUN_BOUND = 200_000
 #: doe name -> productivity index.
 ProdMap = dict[str, float]
 
@@ -208,7 +214,7 @@ def _multi_start(
 
         if runs >= opt.min_runs and since_best >= opt.stall_limit:
             break
-        if runs >= 200000:  # hard safety bound
+        if runs >= HARD_RUN_BOUND:  # hard safety bound
             break
 
     assert best_pairs is not None, "solver produced no best solution"  # noqa: S101 - internal invariant

@@ -20,7 +20,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 from typing import TextIO
+
+from wabbitry_pairing_optimizer.config import ConfigError
+from wabbitry_pairing_optimizer.load_breeders import BreedersError
+from wabbitry_pairing_optimizer.load_litters import LittersError
+from wabbitry_pairing_optimizer.recipe import RecipeError
 
 __all__ = ["main"]
 
@@ -34,12 +40,15 @@ def _emit_json(obj: object) -> str:
     return json.dumps(obj, indent=2)
 
 
-def _emit(emission: str, obj: object, stream: TextIO = sys.stdout) -> None:
+def _emit(emission: str, obj: object, stream: TextIO | None = None) -> None:
+    # Resolve stdout at call time (not import time) so test capture and
+    # stdout redirection see the current stream.
+    out = sys.stdout if stream is None else stream
     if emission == "json":
-        stream.write(_emit_json(obj) + "\n")
+        out.write(_emit_json(obj) + "\n")
     else:
         # obj is a plain string/bytes-like message for text mode.
-        stream.write(f"{obj}\n")
+        out.write(f"{obj}\n")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -194,8 +203,39 @@ def main(argv: list[str] | None = None) -> int:
             solution.schedule_days,
         )
         return 0
-    except Exception as exc:  # noqa: BLE001 - surface run errors uniformly
+    except (
+        ConfigError,
+        BreedersError,
+        LittersError,
+        RecipeError,
+        OSError,
+        ValueError,
+        KeyError,
+        TypeError,
+    ) as exc:
+        # Expected failure modes (bad config, missing/broken data files): a
+        # clean, concise error for both emission modes.
         _emit(emission, {"command": "error", "error": str(exc)})
+        return 1
+    except Exception as exc:  # noqa: BLE001 - unexpected; surface the root cause
+        # Anything else is unexpected — hide nothing. Include the exception
+        # type + traceback so the operator sees what actually went wrong.
+        if emission == "json":
+            _emit(
+                emission,
+                {
+                    "command": "error",
+                    "error": str(exc),
+                    "type": type(exc).__name__,
+                    "unexpected": True,
+                    "traceback": traceback.format_exc(),
+                },
+            )
+        else:
+            _emit(
+                emission,
+                f"unexpected error ({type(exc).__name__}): {exc}\n{traceback.format_exc()}",
+            )
         return 1
 
 
