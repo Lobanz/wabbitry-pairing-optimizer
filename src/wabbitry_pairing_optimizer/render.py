@@ -19,6 +19,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+from wabbitry_pairing_optimizer import __version__
 from wabbitry_pairing_optimizer.config import OutputConfig
 from wabbitry_pairing_optimizer.models import (
     Breeder,
@@ -103,6 +104,7 @@ def write_artifacts(
     json_doc = {
         "seed": seed,
         "seedless": seed == 0,
+        "tool_version": __version__,
         "schedule_days": report.solution.schedule_days,
         "schedule_capped_at": max_bucks_per_day,
         "schedule_capped": _calendar(max_bucks_per_day),
@@ -214,6 +216,7 @@ def _render_markdown(report: PairingReport, seed: int, max_bucks_per_day: int) -
     lines.append("# Wascally Wabbitry — breeding round report")
     lines.append("")
     lines.append(f"- **Seed**: {seed} ({'seedless/random' if seed == 0 else 'deterministic'})")
+    lines.append(f"- **Tool**: wabbitry-pairing-optimizer v{__version__}")
     lines.append(f"- **Pairability**: {sol.pairability_count}")
     lines.append(f"- **Unbred does**: {', '.join(sol.unbred_does) or 'none'}")
     lines.append("")

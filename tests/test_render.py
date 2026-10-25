@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from wabbitry_pairing_optimizer import __version__
 from wabbitry_pairing_optimizer.config import load_config
 from wabbitry_pairing_optimizer.load_breeders import load_breeders
 from wabbitry_pairing_optimizer.load_litters import load_litters
@@ -81,6 +82,7 @@ def test_json_report_content(roster, litters, config) -> None:
     doc = json.loads((TMP / config.output.report_json).read_text(encoding="utf-8"))
     assert doc["seed"] == 42
     assert doc["seedless"] is False
+    assert doc["tool_version"] == __version__
     assert len(doc["pairings"]) == len(sol.pairings)
     assert doc["schedule_days"] == sol.schedule_days
     assert "final" in doc["score"]
@@ -95,6 +97,7 @@ def test_markdown_report_content(roster, litters, config) -> None:
     write_artifacts(str(TMP), report, 42, mat, prod, config.output)
     md = (TMP / config.output.report_md).read_text(encoding="utf-8")
     assert "Wascally Wabbitry" in md
+    assert f"**Tool**: wabbitry-pairing-optimizer v{__version__}" in md
     assert "full-solution score" in md.lower()
     assert "**final**" in md
     # Pairings rendered as a doe-first table with the spanning Name·Breed header
