@@ -1,0 +1,4 @@
+# Runtime dependencies, deliberately pinned (issue #40 / driller pattern).
+# Bumped in their own commit, never silently. Read by uv run --with-requirements
+# in the scripts, so a fresh clone runs with nothing but uv installed.
+pydantic==2.14.1
