@@ -21,7 +21,7 @@ import argparse
 import json
 import sys
 import traceback
-from typing import TextIO
+from typing import Any, TextIO
 
 from wabbitry_pairing_optimizer.config import ConfigError
 from wabbitry_pairing_optimizer.load_breeders import BreedersError
@@ -51,6 +51,28 @@ def _emit(emission: str, obj: object, stream: TextIO | None = None) -> None:
         out.write(f"{obj}\n")
 
 
+def _render_query_text(payload: dict[str, Any]) -> str:
+    """Human-readable query/rank rows for text emission mode."""
+    header = f"{payload['command']}: {payload['n']} row(s)"
+    if payload.get("subject"):
+        header += f" for {payload['subject']}"
+    lines = [header]
+    for r in payload["rows"]:
+        fixed = " (fixed)" if r["fixed"] else ""
+        cross = " [cross-strain]" if r["cross_strain"] else ""
+        warns = f" ({', '.join(r['warnings'])})" if r["warnings"] else ""
+        sire_t = r["sire"][0].upper() + r["sire"][1:]
+        dam_t = r["dam"][0].upper() + r["dam"][1:]
+        lines.append(
+            f"{sire_t} x {dam_t}{fixed} · {r['sire_breed']}/{r['dam_breed']} "
+            f"| r {r['kinship_r']:.4f} ({r['related_pct']:.0f}%) "
+            f"{r['relationship_kind']}/{r['tier']} "
+            f"| doe {r['doe_productivity']:.2f} | score {r['final_score']:+.3f}"
+            f"{cross}{warns}"
+        )
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point. Returns a process exit code.
 
@@ -69,7 +91,35 @@ def main(argv: list[str] | None = None) -> int:
         help="path to breeders.json (default data/breeders.json)",
     )
     parser.add_argument(
-        "--pairs", metavar="FILE", help="pre-decided pairings JSON (list of Pairing)"
+        "--pairs",
+        metavar="FILE|SPEC",
+        default="data/fixed_pairs.json",
+        help=(
+            "fixed pairs: JSON file (list of {sire,dam}) or inline 'sire:dam,...'; "
+            "default data/fixed_pairs.json"
+        ),
+    )
+    parser.add_argument(
+        "--query",
+        metavar="SPEC",
+        help="ad-hoc query: 'sire:dam, sire:dam' — full metric rows, no solving",
+    )
+    parser.add_argument(
+        "--rank",
+        metavar="TYPE:NAME",
+        help="rank best candidates: 'buck:NAME' (does) or 'doe:NAME' (bucks)",
+    )
+    parser.add_argument(
+        "--sort",
+        choices=("score", "r", "productivity"),
+        default="score",
+        help="rank order: score (default), r (least related), productivity",
+    )
+    parser.add_argument("--limit", type=int, default=None, help="max ranked rows")
+    parser.add_argument(
+        "--all-strains",
+        action="store_true",
+        help="include cross-strain candidates in ranked results",
     )
     parser.add_argument("--config", metavar="FILE", default="data/config.toml")
     parser.add_argument(
@@ -109,7 +159,6 @@ def main(argv: list[str] | None = None) -> int:
 
     # --- Run the full round (solver + render). ---
     try:
-        import json as _json
         from pathlib import Path
 
         from wabbitry_pairing_optimizer import (
@@ -135,13 +184,60 @@ def main(argv: list[str] | None = None) -> int:
         litters_dir = str(Path(getattr(pre, "breeders", "data/breeders.json")).parent / "litters")
         litters = load_litters(litters_dir, known_rabbits={b.name for b in breeders})
 
-        # Fixed pairs from --pairs (list of {"sire","dam"}).
-        fixed_pairs: list[tuple[str, str]] = []
-        pairs_file = getattr(pre, "pairs", None)
-        if pairs_file:
-            with open(pairs_file, encoding="utf-8") as fh:
-                for entry in _json.load(fh):
-                    fixed_pairs.append((entry["sire"], entry["dam"]))
+        # Fixed pairs from --pairs: a JSON file OR an inline 'sire:dam,...' spec
+        # (default data/fixed_pairs.json — the committed fixed pairs).
+        from wabbitry_pairing_optimizer.query import load_fixed_pairs
+
+        fixed_pairs = load_fixed_pairs(getattr(pre, "pairs", "data/fixed_pairs.json"))
+
+        # --- Ad-hoc query / rank mode (no solving, no artifact writes). ---
+        query_spec = getattr(pre, "query", None)
+        rank_spec = getattr(pre, "rank", None)
+        if query_spec or rank_spec:
+            from dataclasses import asdict
+
+            from wabbitry_pairing_optimizer.query import (
+                parse_pair_spec,
+                query_pairs,
+                rank_for_subject,
+            )
+
+            if query_spec:
+                pairs = parse_pair_spec(query_spec)
+                rows = query_pairs(pairs, breeders, litters, cfg, fixed_pairs)
+                payload = {
+                    "command": "query",
+                    "subject": None,
+                    "n": len(rows),
+                    "rows": [asdict(r) for r in rows],
+                }
+            else:
+                rspec = rank_spec or ""  # truthy here; keep the type checker happy
+                subject_type, _, subject = rspec.partition(":")
+                if subject_type not in ("buck", "doe") or not subject:
+                    raise ValueError(f"--rank expects 'buck:NAME' or 'doe:NAME', got {rank_spec!r}")
+                rows = rank_for_subject(
+                    subject,
+                    subject_type,
+                    breeders,
+                    litters,
+                    cfg,
+                    fixed_pairs,
+                    all_strains=bool(getattr(pre, "all_strains", False)),
+                    sort=getattr(pre, "sort", "score"),
+                    limit=getattr(pre, "limit", None),
+                )
+                payload = {
+                    "command": "rank",
+                    "subject": rank_spec,
+                    "n": len(rows),
+                    "rows": [asdict(r) for r in rows],
+                }
+            if emission == "text":
+                _emit(emission, _render_query_text(payload))
+            else:
+                _emit(emission, payload)
+            return 0
 
         # Resolve the output directory (CLI overrides config default) + log.
         output_dir = getattr(pre, "output_dir", None) or cfg.output.output_dir
