@@ -23,6 +23,11 @@ dev = [
 [tool.hatch.version]
 path = "src/wabbitry_pairing_optimizer/__init__.py"
 
+# Installed command (issue #40): `uv tool install <wheel>` puts this on PATH in
+# its own isolated env — no virtualenv to set up or activate.
+[project.scripts]
+wabbitry-pairing-optimizer = "wabbitry_pairing_optimizer.__main__:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/wabbitry_pairing_optimizer"]
 
