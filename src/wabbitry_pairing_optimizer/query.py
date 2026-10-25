@@ -197,6 +197,7 @@ def rank_for_subject(
     all_strains: bool = False,
     sort: str = "score",
     limit: int | None = None,
+    excluded: set[str] | None = None,
 ) -> list[PairQueryRow]:
     """Rank the best candidates for a subject.
 
@@ -214,6 +215,8 @@ def rank_for_subject(
         sort: ``"score"`` (per-pairing final, desc), ``"r"`` (least related
             first), or ``"productivity"`` (doe index, desc).
         limit: Max rows to return (None = all).
+        excluded: Breeder names benched for this round (issue #36) — excluded
+            from the candidate set (an explicit subject still works).
 
     Returns:
         Rows sorted per ``sort``, deterministic on ties (name ascending).
@@ -222,18 +225,27 @@ def rank_for_subject(
         ValueError: Unknown subject, or a buck/doe mismatch.
     """
     by_name = _by_name(roster)
+    excluded = excluded or set()
     if subject not in by_name:
         raise ValueError(f"unknown {subject_type} {subject!r}")
     sub = by_name[subject]
     if subject_type == "buck":
         if sub.gender != "M":
             raise ValueError(f"{subject!r} is not a buck (gender={sub.gender})")
-        candidates = [b for b in roster if not b.culled and not b.is_composite and b.gender == "F"]
+        candidates = [
+            b
+            for b in roster
+            if not b.culled and not b.is_composite and b.gender == "F" and b.name not in excluded
+        ]
         pairs = [(subject, b.name) for b in candidates]
     elif subject_type == "doe":
         if sub.gender != "F":
             raise ValueError(f"{subject!r} is not a doe (gender={sub.gender})")
-        candidates = [b for b in roster if not b.culled and not b.is_composite and b.gender == "M"]
+        candidates = [
+            b
+            for b in roster
+            if not b.culled and not b.is_composite and b.gender == "M" and b.name not in excluded
+        ]
         pairs = [(b.name, subject) for b in candidates]
     else:
         raise ValueError(f"subject_type must be 'buck' or 'doe', got {subject_type!r}")

@@ -53,6 +53,7 @@ def solve(
     litters: list[Litter],
     config: Config,
     fixed_pairs: list[tuple[str, str]] | None = None,
+    excluded: set[str] | None = None,
 ) -> Solution:
     """Solve one breeding round (multi-start ranked greedy).
 
@@ -61,12 +62,19 @@ def solve(
         litters: All litter records (for productivity).
         config: Full typed config (kinship/productivity/scoring/optimization).
         fixed_pairs: Optional list of (sire, dam) operator pre-decided pairs.
+        excluded: Breeder names benched for this round — not auto-assigned and
+            not bred (issue #36). May not appear in ``fixed_pairs``.
 
     Returns:
         The winning ``Solution`` (all pairings, full-solution score, schedule,
         pairability).
     """
     fixed_pairs = fixed_pairs or []
+    excluded = excluded or set()
+    # A benched breeder cannot be in an operator-fixed pair (contradiction).
+    for sire, dam in fixed_pairs:
+        if sire in excluded or dam in excluded:
+            raise ValueError(f"fixed pair {sire} x {dam} references an excluded breeder")
     mat = coancestry_matrix_r(roster, config.kinship)
     prod = doe_production_scores(roster, litters, config.productivity)
     by = {b.name: b for b in roster}
@@ -74,10 +82,11 @@ def solve(
     opt = config.optimization
     rng = random.Random(opt.seed if opt.seed else None)  # noqa: S311 - intentional seeded non-crypto PRNG for reproducible shuffle
 
-    # Active does/bucks per strain (pools independent per design §6).
+    # Active does/bucks per strain (pools independent per design §6). Excluded
+    # breeders never enter the pools.
     strains: dict[str, tuple[list[str], list[str]]] = {}
     for b in roster:
-        if not b.culled and not b.is_composite:
+        if not b.culled and not b.is_composite and b.name not in excluded:
             does_l, bucks_l = strains.setdefault(b.strain, ([], []))
             target = does_l if b.gender == "F" else bucks_l
             target.append(b.name)
@@ -108,7 +117,7 @@ def solve(
         best_pairs = _multi_start(does_left, auto_bucks, mat, prod, roster, config, rng)
         all_pairings.extend(best_pairs)
 
-    return _assemble(all_pairings, roster, config, prod)
+    return _assemble(all_pairings, roster, config, prod, excluded)
 
 
 def _assign_one(
@@ -226,10 +235,16 @@ def _assemble(
     roster: list[Breeder],
     config: Config,
     prod: ProdMap,
+    excluded: set[str] | None = None,
 ) -> Solution:
     """Build the winning Solution with score, schedule, and pairability."""
+    excluded = excluded or set()
     assigned = {p.dam for p in pairings}
-    all_does = [b.name for b in roster if b.gender == "F" and not b.culled and not b.is_composite]
+    all_does = [
+        b.name
+        for b in roster
+        if b.gender == "F" and not b.culled and not b.is_composite and b.name not in excluded
+    ]
     unbred = sorted(set(all_does) - assigned)
 
     opt = config.optimization
