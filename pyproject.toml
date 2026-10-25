@@ -4,7 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wabbitry-pairing-optimizer"
-version = "0.1.0"
+# Version is single-sourced from the package __init__ (issue #40): hatch reads
+# it via [tool.hatch.version] path, so --version and the wheel cannot drift.
+dynamic = ["version"]
 description = "Least-bad breeding pairings for Wascally Wabbitry."
 requires-python = ">=3.11"
 dependencies = [
@@ -17,6 +19,9 @@ dev = [
     "mypy>=1.10",
     "pytest>=8.0",
 ]
+
+[tool.hatch.version]
+path = "src/wabbitry_pairing_optimizer/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wabbitry_pairing_optimizer"]

@@ -4,6 +4,11 @@ Public API: the data models, the typed config, and (once implemented in later
 phases) the solver, kinship, productivity, and report functions.
 """
 
+#: Single source of truth for the package version (issue #40): hatch reads it
+#: via ``dynamic = ["version"]`` + ``[tool.hatch.version] path``, and the CLI
+#: ``--version`` returns it.
+__version__ = "0.2.0"
+
 from wabbitry_pairing_optimizer.config import (
     Config,
     ConfigError,
@@ -59,6 +64,7 @@ from wabbitry_pairing_optimizer.scoring import (
 from wabbitry_pairing_optimizer.solve import solve
 
 __all__ = [
+    "__version__",
     "Breeder",
     "BreedersError",
     "Config",
