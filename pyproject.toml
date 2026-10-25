@@ -9,15 +9,17 @@ name = "wabbitry-pairing-optimizer"
 dynamic = ["version"]
 description = "Least-bad breeding pairings for Wascally Wabbitry."
 requires-python = ">=3.11"
+# Deliberate pins — bumped in their own commit (driller discipline, standard
+# uv layout). A dev venv is created/reconciled with `uv sync` (dev group).
 dependencies = [
-    "pydantic>=2.0",
+    "pydantic==2.14.1",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "ruff>=0.5",
-    "mypy>=1.10",
-    "pytest>=8.0",
+    "ruff==0.17.0",
+    "mypy==2.4.0",
+    "pytest==9.1.1",
 ]
 
 [tool.hatch.version]

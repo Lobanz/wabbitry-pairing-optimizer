@@ -1,9 +1,0 @@
-# Development toolchain + runtime deps, deliberately pinned (issue #40).
-# uv run --with-requirements scripts/dev-requirements.txt caches this env, so
-# no virtualenv is ever created/activated. Bumps go in their own commit.
-# runtime-requirements.txt is the single runtime pin list; dev adds the tools
-# (pydantic repeated here so tests/scripts can import the package under uv).
-pydantic==2.14.1
-ruff==0.17.0
-mypy==2.4.0
-pytest==9.1.1
