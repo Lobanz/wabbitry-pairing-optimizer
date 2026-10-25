@@ -13,3 +13,4 @@ htmlcov/
 out/*
 !out/.gitkeep
 tests/_render_tmp/
+tests/_exclude_tmp/
