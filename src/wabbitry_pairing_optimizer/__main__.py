@@ -121,6 +121,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="include cross-strain candidates in ranked results",
     )
+    parser.add_argument(
+        "--exclude",
+        metavar="NAMES",
+        help="bench breeders for this round: comma-separated names (no auto "
+        "assignment, not bred; e.g. --exclude 'zack, uno')",
+    )
     parser.add_argument("--config", metavar="FILE", default="data/config.toml")
     parser.add_argument(
         "--seed",
@@ -184,6 +190,17 @@ def main(argv: list[str] | None = None) -> int:
         litters_dir = str(Path(getattr(pre, "breeders", "data/breeders.json")).parent / "litters")
         litters = load_litters(litters_dir, known_rabbits={b.name for b in breeders})
 
+        # Benched breeders (issue #36): parsed + validated (typos must not
+        # silently bench nothing).
+        excluded: set[str] = set()
+        exclude_arg = getattr(pre, "exclude", None)
+        if exclude_arg:
+            names = {n.strip() for n in exclude_arg.split(",") if n.strip()}
+            unknown = names - {b.name for b in breeders}
+            if unknown:
+                raise ValueError(f"unknown breeder(s) in --exclude: {sorted(unknown)}")
+            excluded = names
+
         # Fixed pairs from --pairs: a JSON file OR an inline 'sire:dam,...' spec
         # (default data/fixed_pairs.json — the committed fixed pairs).
         from wabbitry_pairing_optimizer.query import load_fixed_pairs
@@ -226,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
                     all_strains=bool(getattr(pre, "all_strains", False)),
                     sort=getattr(pre, "sort", "score"),
                     limit=getattr(pre, "limit", None),
+                    excluded=excluded,
                 )
                 payload = {
                     "command": "rank",
@@ -243,7 +261,7 @@ def main(argv: list[str] | None = None) -> int:
         output_dir = getattr(pre, "output_dir", None) or cfg.output.output_dir
         setup_logging(cfg.output, output_dir)
 
-        solution = solve(breeders, litters, cfg, fixed_pairs=fixed_pairs)
+        solution = solve(breeders, litters, cfg, fixed_pairs=fixed_pairs, excluded=excluded)
         mat = coancestry_matrix_r(breeders, cfg.kinship)
         prod = doe_production_scores(breeders, litters, cfg.productivity)
         fixed_pairings = [p for p in solution.pairings if p.fixed]
