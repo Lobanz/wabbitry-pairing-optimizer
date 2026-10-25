@@ -26,6 +26,21 @@ def test_empty_round() -> None:
     assert schedule_days([], 4) == 0
 
 
+def test_schedule_days_per_buck() -> None:
+    """Length estimate keys on BUCK load (issue #37 regression pin)."""
+    round_pairs = (
+        [_p("yaz", f"y{i}") for i in range(3)]
+        + [_p("zack", f"z{i}") for i in range(3)]
+        + [_p("uno", "u1")]
+        + [_p("vader", f"v{i}") for i in range(2)]
+        + [_p("willy", f"w{i}") for i in range(2)]
+        + [_p("xerces", f"x{i}") for i in range(2)]
+    )
+    # yaz/zack 3 does -> 5 days; uno 1 -> 1; vader/willy/xerces 2 -> 3 each.
+    # Batches of 4: [5,5,5,1] -> 5, then [3,3,3] -> 3. Total 8 (was 4 pre-fix).
+    assert schedule_days(round_pairs, 4) == 8
+
+
 def test_single_buck_spaced_days() -> None:
     """A lone buck with k does breeds every OTHER day (alternation in model)."""
     round_pairs = [_p("yaz", "betty"), _p("yaz", "lily"), _p("yaz", "kiki")]

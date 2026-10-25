@@ -176,7 +176,10 @@ def schedule_days(pairings: list[Pairing], buck_batch_capacity: int) -> int:
     """
     if not pairings:
         return 0
-    per_buck = Counter(p.dam for p in pairings)  # does per buck == litters per buck
+    # Does per BUCK (a buck servicing k does spans 2k-1 days). Keyed on sire,
+    # NOT dam — each dam appears once, so keying on dam collapsed all loads to
+    # 1 and under-counted the estimate (issue #37).
+    per_buck = Counter(p.sire for p in pairings)
     # A buck servicing k does spans 2k-1 days (k breed days + (k-1) rest days).
     buck_spans = [2 * k - 1 for k in per_buck.values()]
 
