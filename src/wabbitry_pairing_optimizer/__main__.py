@@ -32,8 +32,10 @@ __all__ = ["main"]
 
 
 def _version() -> str:
-    """Return the package version (static in pyproject; no VCS plugin needed)."""
-    return "0.1.0"
+    """Return the package version (single source: __init__.__version__)."""
+    from wabbitry_pairing_optimizer import __version__
+
+    return __version__
 
 
 def _emit_json(obj: object) -> str:
